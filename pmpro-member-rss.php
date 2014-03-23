@@ -16,22 +16,50 @@ Author URI: http://www.strangerstudios.com
 */
 
 /*
-	Show RSS Feeds with Member Key on Membership Account Page
+	Utility Functions
 */
-function pmpromrss_pmpro_member_links_bottom()
+//get a member key
+function pmpromrss_getMemberKey($user_id = NULL)
 {
-	global $current_user;
+	//default to current user
+	if(empty($user_id))
+	{
+		global $current_user;
+		$user_id = $current_user->ID;
+	}
 	
-	//get member key
-	$key = get_user_meta($current_user->ID, "pmpromrss_key", true);
+	//make sure we have a user
+	if(empty($user_id))
+		return false;
+		
+	$user = get_userdata($user_id);
+
+	//get key
+	$key = get_user_meta($user->ID, "pmpromrss_key", true);
 	
 	//create member key if they don't already have one
 	if(empty($key))
 	{
-		$key = md5(time() . $current_user->user_login . AUTH_KEY);
-		update_user_meta($current_user->ID, "pmpromrss_key", $key);
+		$key = md5(time() . $user->user_login . AUTH_KEY);
+		update_user_meta($user->ID, "pmpromrss_key", $key);
 	}
 	
+	return $key;
+}
+
+//add the memberkey to a url
+function pmpromrss_url($url, $user_id = NULL)
+{
+	$key = pmpromrss_getMemberKey($user_id);
+	
+	return add_query_arg("memberkey", $key, $url);
+}
+	
+/*
+	Show RSS Feeds with Member Key on Membership Account Page
+*/
+function pmpromrss_pmpro_member_links_bottom()
+{	
 	//show links to RSS feeds (format is title => url)
 	$feeds = apply_filters("pmpromrss_feeds", array("Recent Posts Feed" => get_bloginfo('rss_url')));
 	
@@ -39,7 +67,7 @@ function pmpromrss_pmpro_member_links_bottom()
 	foreach($feeds as $title => $feed)
 	{
 	?>
-		<li><a href="<?php echo esc_attr(add_query_arg("memberkey", $key, $feed));?>"><?php echo $title;?></a></li>
+		<li><a href="<?php echo pmpromrss_url($feed);?>"><?php echo $title;?></a></li>
 	<?php
 	}
 }
