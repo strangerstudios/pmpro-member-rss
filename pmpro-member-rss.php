@@ -3,7 +3,7 @@
 Plugin Name: PMPro Member RSS Feeds
 Plugin URI: http://www.paidmembershipspro.com/wp/pmpro-member-rss/
 Description: Create Member-Specific RSS Feeds for Paid Memberships Pro
-Version: .1
+Version: .1.1
 Author: Stranger Studios
 Author URI: http://www.strangerstudios.com
 */
@@ -102,7 +102,7 @@ function pmpromrss_pmpro_has_membership_access_filter($hasaccess, $mypost, $myus
 	if(!empty($post_membership_levels))
 	{
 		foreach($post_membership_levels as $level)
-			$post_membership_levels_ids[] = $level->id;		
+			$post_membership_levels_ids[] = $level->id;
 	}
 		
 	if(pmpro_hasMembershipLevel($post_membership_levels_ids, $pmpromrss_user_id))
