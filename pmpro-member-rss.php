@@ -102,7 +102,7 @@ function pmpromrss_pmpro_has_membership_access_filter($hasaccess, $mypost, $myus
 	if(!empty($post_membership_levels))
 	{
 		foreach($post_membership_levels as $level)
-			$post_membership_levels_ids[] = $level->id;		
+			$post_membership_levels_ids[] = $level->id;
 	}
 		
 	if(pmpro_hasMembershipLevel($post_membership_levels_ids, $pmpromrss_user_id))
