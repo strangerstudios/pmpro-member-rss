@@ -1,9 +1,9 @@
 <?php
 /*
-Plugin Name: PMPro Member RSS Feeds
+Plugin Name: Paid Memberships Pro - Member RSS Add On
 Plugin URI: http://www.paidmembershipspro.com/wp/pmpro-member-rss/
 Description: Create Member-Specific RSS Feeds for Paid Memberships Pro
-Version: .1
+Version: .2
 Author: Stranger Studios
 Author URI: http://www.strangerstudios.com
 */
@@ -111,3 +111,41 @@ function pmpromrss_pmpro_has_membership_access_filter($hasaccess, $mypost, $myus
 	return $hasaccess;
 }
 add_filter('pmpro_has_membership_access_filter', 'pmpromrss_pmpro_has_membership_access_filter', 10, 4);
+
+//remove enclosures for member feeds
+function pmprorss_rss_enclosure($enclosure)
+{
+	global $post;
+	
+	if(!pmpro_has_membership_access())
+		$enclosure = "";
+	
+	return $enclosure;
+}
+add_filter('rss_enclosure', 'pmprorss_rss_enclosure', 20);
+
+//better rss messages
+function pmprorss_pmpro_rss_text_filter($text)
+{
+	global $post;
+	
+	$text = "Please visit " . get_permalink($post->ID) . " to access this member content.";
+	
+	return $text;
+}
+add_filter('pmpro_rss_text_filter', 'pmprorss_pmpro_rss_text_filter');
+
+/*
+Function to add links to the plugin row meta
+*/
+function pmprorss_plugin_row_meta($links, $file) {
+	if(strpos($file, 'pmpro-member-rss.php') !== false)
+	{
+		$new_links = array(
+			'<a href="' . esc_url('http://paidmembershipspro.com/support/') . '" title="' . esc_attr( __( 'Visit Customer Support Forum', 'pmpro' ) ) . '">' . __( 'Support', 'pmpro' ) . '</a>',
+		);
+		$links = array_merge($links, $new_links);
+	}
+	return $links;
+}
+add_filter('plugin_row_meta', 'pmprorss_plugin_row_meta', 10, 2);
