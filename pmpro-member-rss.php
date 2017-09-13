@@ -97,6 +97,10 @@ function pmpromrss_pmpro_has_membership_access_filter($hasaccess, $mypost, $myus
 	if(empty($pmpromrss_user_id))
 		return $hasaccess;
 	
+	if ( !is_feed() ) {
+		return $hasaccess;
+	}
+	
 	//we need to see if the user has access
 	$post_membership_levels_ids = array();
 	if(!empty($post_membership_levels))
@@ -105,11 +109,17 @@ function pmpromrss_pmpro_has_membership_access_filter($hasaccess, $mypost, $myus
 			$post_membership_levels_ids[] = $level->id;
 	}
 		
-	if(pmpro_hasMembershipLevel($post_membership_levels_ids, $pmpromrss_user_id))
+	if( is_feed() && false !== pmpro_hasMembershipLevel($post_membership_levels_ids, $pmpromrss_user_id)) {
 		$hasaccess = true;
+	}
+	
+	if ( is_feed() && false === pmpro_hasMembershipLevel($post_membership_levels_ids, $pmpromrss_user_id) ) {
+		$hasaccess = false;
+	}
 	
 	return $hasaccess;
 }
+
 add_filter('pmpro_has_membership_access_filter', 'pmpromrss_pmpro_has_membership_access_filter', 10, 4);
 
 //remove enclosures for member feeds
