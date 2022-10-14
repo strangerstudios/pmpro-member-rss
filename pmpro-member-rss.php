@@ -86,7 +86,7 @@ function pmpromrss_getMemberKey( $user_id = NULL, $level_id = false ) {
 	}
 		
 	$user = get_userdata($user_id);
-// var_dump($level_id);
+
 	if ( $level_id ) {
 
 		//Should the level they're checking out with get a separate key?
@@ -244,12 +244,12 @@ function pmpromrss_pmpro_has_membership_access_filter( $hasaccess, $mypost, $myu
 add_filter('pmpro_has_membership_access_filter', 'pmpromrss_pmpro_has_membership_access_filter', 10, 4);
 
 //remove enclosures for member feeds
-function pmprorss_rss_enclosure($enclosure)
-{
+function pmprorss_rss_enclosure( $enclosure ) {
 	global $post;
-	
-	if(!pmpro_has_membership_access())
+
+	if ( ! pmpro_has_membership_access() ) {
 		$enclosure = "";
+	}
 	
 	return $enclosure;
 }
