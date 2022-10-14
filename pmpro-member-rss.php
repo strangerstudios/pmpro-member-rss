@@ -99,6 +99,8 @@ function pmpromrss_getMemberKey( $user_id = NULL, $level_id = false ) {
 				$key = md5(time() . $user->user_login . AUTH_KEY);
 				update_user_meta( $user->ID, 'pmpromrss_key_'.$level_id, $key );
 			}
+
+			return $key;
 		}
 
 	} else {
@@ -112,9 +114,11 @@ function pmpromrss_getMemberKey( $user_id = NULL, $level_id = false ) {
 			update_user_meta($user->ID, "pmpromrss_key", $key);
 		}
 
+		return $key;
+
 	}
 	
-	return $key;
+	return false;
 }
 
 //add the memberkey to a url
@@ -297,3 +301,70 @@ function pmprorss_after_level_change_generate_key( $level_id, $user_id, $cancel 
 }
 add_action( 'pmpro_after_change_membership_level', 'pmprorss_after_level_change_generate_key', 10, 3 );
 
+/**
+ * Display a list of available Member RSS Keys and allow them to be regenerated
+ * @param  object $user The current user object that is being edited
+ * @return mixed HTML content
+ */
+function pmprorss_memberkeys_profile( $user ) { 
+
+	global $pmpro_levels;
+
+	?>
+
+    <h3><?php esc_html_e( 'Member RSS Keys', 'pmpro-member-rss' ); ?></h3>
+
+    <table class="form-table">
+
+	    <tr>
+	        <th><label for="address"><?php esc_html_e( 'Recent Posts Feed', 'pmpro-member-rss' ); ?></label></th>
+	        <td>
+	            <input type="text" name="affwp_company_name" id="affwp_company_name" value="<?php echo pmpromrss_getMemberKey( $user->ID ); ?>" class="regular-text" />&nbsp;<a href='' class='button button-primary'>Regenerate Key</a>
+	        </td>
+	    </tr>
+    	
+    	<?php
+
+  			foreach( $pmpro_levels as $level ) {
+
+				if ( ! empty( $level->id ) ) {
+
+					$key = pmpromrss_getMemberKey( $user->ID, $level->id ); 
+
+					if( ! empty( $key ) ) {
+						//Add a feed with that level's key
+						$feed_array[] = array( 'url' => get_bloginfo( 'rss_url' ), 'level' => $level->id, 'key' => $key );
+						?>
+						<tr>
+					        <th><label for="address"><?php esc_html_e( sprintf( __( 'Recent Posts Feed - %s', 'pmpro-member-rss' ), $level->name ) ); ?></label></th>
+					        <td>
+					            <input type="text" readonly="readonly" name="pmprorss_key_<?php echo $level->id; ?>" id="pmprorss_key_<?php echo $level->id; ?>" value="<?php echo $key; ?>" class="regular-text" />&nbsp;<a href='' class='button button-primary'>Regenerate Key</a>
+					        </td>
+					    </tr>
+						<?php
+					}
+
+				}
+			}
+
+    	?>
+    </table>
+<?php }
+add_action( 'show_user_profile', 'pmprorss_memberkeys_profile' );
+add_action( 'edit_user_profile', 'pmprorss_memberkeys_profile' );
+
+function pmprorss_memberkeys_profile_save( $user_id ) {
+
+    if ( empty( $_POST['_wpnonce'] ) || ! wp_verify_nonce( $_POST['_wpnonce'], 'update-user_' . $user_id ) ) {
+        return;
+    }
+    
+    if ( !current_user_can( 'edit_user', $user_id ) ) { 
+        return false; 
+    }
+
+
+
+}
+add_action( 'personal_options_update', 'pmprorss_memberkeys_profile_save' );
+add_action( 'edit_user_profile_update', 'pmprorss_memberkeys_profile_save' );
