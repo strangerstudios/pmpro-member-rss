@@ -152,11 +152,16 @@ function pmpromrss_pmpro_member_links_bottom() {
 	$levels_array = array();
 
 	foreach( $pmpro_levels as $level ) {
-		$requires_key = intval( pmpro_getOption( 'rss_member_key_'.$level->id ) );
 
-		if( $requires_key ) {
-			//Add a feed with that level's key
-			$feed_array[sprintf( __( 'Recent Posts Feed - %s', 'pmpro-member-rss' ), $level->name )] = array( 'url' => get_bloginfo( 'rss_url' ), 'level' => $level->id );
+		if ( ! empty( $level->id ) ) {
+
+			$requires_key = intval( pmpro_getOption( 'rss_member_key_'.$level->id ) );
+
+			if( $requires_key ) {
+				//Add a feed with that level's key
+				$feed_array[sprintf( __( 'Recent Posts Feed - %s', 'pmpro-member-rss' ), $level->name )] = array( 'url' => get_bloginfo( 'rss_url' ), 'level' => $level->id );
+			}
+
 		}
 	}
 
@@ -202,35 +207,37 @@ function pmprorss_init() {
 			$pmpromrss_user_id = $wpdb->get_var("SELECT user_id FROM $wpdb->usermeta WHERE meta_key = 'pmpromrss_key' AND meta_value = '" . esc_sql($key) . "' LIMIT 1");			
 		}
 		
-		var_dump($pmpromrss_user_id);
 	}	
 }
 add_action('init', 'pmprorss_init', 1);
 
 //update has access filter
-function pmpromrss_pmpro_has_membership_access_filter($hasaccess, $mypost, $myuser, $post_membership_levels)
-{
+function pmpromrss_pmpro_has_membership_access_filter( $hasaccess, $mypost, $myuser, $post_membership_levels ) {
+
 	global $pmpromrss_user_id, $pmpromrss_level_id;		
 	
-	if(empty($pmpromrss_user_id))
+	if ( empty( $pmpromrss_user_id ) ) {
 		return $hasaccess;
+	}
 	
 	//we need to see if the user has access
 	$post_membership_levels_ids = array();
-	if( !empty( $post_membership_levels ) ) {
-		foreach($post_membership_levels as $level) {
-			if( ! empty( $pmpromrss_level_id ) ) {
+
+	if ( !empty( $post_membership_levels ) ) {
+		foreach ($post_membership_levels as $level) {
+			if ( ! empty( $pmpromrss_level_id ) ) {
 				if( $pmpromrss_level_id == $level->id ) {
-					$post_membership_levels_ids[] = $level->id;
+					$post_membership_levels_ids[] = intval( $level->id );
 				}
 			} else {
-				$post_membership_levels_ids[] = $level->id;
+				$post_membership_levels_ids[] = intval( $level->id );
 			}
 		}
 	}
-		
-	if(pmpro_hasMembershipLevel($post_membership_levels_ids, $pmpromrss_user_id))
+
+	if ( pmpro_hasMembershipLevel( $post_membership_levels_ids, intval( $pmpromrss_user_id ) ) ){
 		$hasaccess = true;
+	}
 	
 	return $hasaccess;
 }
@@ -249,11 +256,10 @@ function pmprorss_rss_enclosure($enclosure)
 add_filter('rss_enclosure', 'pmprorss_rss_enclosure', 20);
 
 //better rss messages
-function pmprorss_pmpro_rss_text_filter($text)
-{
+function pmprorss_pmpro_rss_text_filter( $text ) {
 	global $post;
 	
-	$text = "Please visit " . get_permalink($post->ID) . " to access this member content.";
+	$text = sprinf( esc_html__( 'Please visit %s to access this member content.', 'pmpro-member-rss' ), get_permalink( $post->ID ) );
 	
 	return $text;
 }
@@ -290,3 +296,4 @@ function pmprorss_after_level_change_generate_key( $level_id, $user_id, $cancel 
 
 }
 add_action( 'pmpro_after_change_membership_level', 'pmprorss_after_level_change_generate_key', 10, 3 );
+
