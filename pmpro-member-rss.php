@@ -79,15 +79,38 @@ add_action('pmpro_member_links_bottom', 'pmpromrss_pmpro_member_links_bottom');
 //only filter if a valid member key is present
 function pmprorss_init()
 {
+	// TO DO: Need to bail early here if this not an RSS feed.
+
 	if(!empty($_REQUEST['memberkey']))
 	{		
 		global $wpdb;
 		$key = $_REQUEST['memberkey'];
 		global $pmpromrss_user_id;
-		$pmpromrss_user_id = $wpdb->get_var("SELECT user_id FROM $wpdb->usermeta WHERE meta_key = 'pmpromrss_key' AND meta_value = '" . esc_sql($key) . "' LIMIT 1");				
+		$pmpromrss_user_id = $wpdb->get_var("SELECT user_id FROM $wpdb->usermeta WHERE meta_key = 'pmpromrss_key' AND meta_value = '" . esc_sql($key) . "' LIMIT 1");
+
+		// Use our search filter if PMPro set one up.
+		if ( has_filter( 'pre_get_posts', 'pmpro_search_filter' ) ) {
+			remove_filter( 'pre_get_posts', 'pmpro_search_filter' );
+			add_filter( 'pre_get_posts', 'pmprorss_search_filter' );	
+		}
 	}	
 }
 add_action('init', 'pmprorss_init', 1);
+
+/**
+ * Override the current user when running search queries.
+ *
+ */
+function pmprorss_search_filter( $query ) {
+	global $current_user, $pmpromrss_user_id;
+
+	$current_user_backup = $current_user;
+	$current_user = wp_set_current_user( $pmpromrss_user_id );
+
+	$query = pmpro_search_filter( $query );
+
+	$current_user = $current_user_backup;
+}
 
 //update has access filter
 function pmpromrss_pmpro_has_membership_access_filter( $hasaccess, $mypost, $myuser, $post_membership_levels ) {
