@@ -90,27 +90,32 @@ function pmprorss_init()
 add_action('init', 'pmprorss_init', 1);
 
 //update has access filter
-function pmpromrss_pmpro_has_membership_access_filter($hasaccess, $mypost, $myuser, $post_membership_levels)
-{
-	global $pmpromrss_user_id;		
+function pmpromrss_pmpro_has_membership_access_filter( $hasaccess, $mypost, $myuser, $post_membership_levels ) {
+	global $pmpromrss_user_id, $wp_query;		
 	
-	if(empty($pmpromrss_user_id))
+	if( empty( $pmpromrss_user_id ) ) {
 		return $hasaccess;
+	}	
 	
-	//we need to see if the user has access
-	$post_membership_levels_ids = array();
-	if(!empty($post_membership_levels))
-	{
-		foreach($post_membership_levels as $level)
-			$post_membership_levels_ids[] = $level->id;
-	}
-		
-	if(pmpro_hasMembershipLevel($post_membership_levels_ids, $pmpromrss_user_id))
-		$hasaccess = true;
+	// Remove this filter itself to avoid loops.
+	remove_filter( 'pmpro_has_membership_access_filter', 'pmpromrss_pmpro_has_membership_access_filter', 10, 4 );
+
+	// Mask is_feed flag, since PMPro hides all member content from feeds.
+	$is_feed = $wp_query->is_feed;
+	$wp_query->is_feed = false;
+
+	// Now check again with the RSS user.	
+	$hasaccess = pmpro_has_membership_access( $mypost, $pmpromrss_user_id );
+
+	// Add the filter back.
+	add_filter( 'pmpro_has_membership_access_filter', 'pmpromrss_pmpro_has_membership_access_filter', 10, 4 );
+
+	// Reset is_feed
+	$wp_query->is_feed = $is_feed;
 	
-	return $hasaccess;
+	return $hasaccess;	
 }
-add_filter('pmpro_has_membership_access_filter', 'pmpromrss_pmpro_has_membership_access_filter', 10, 4);
+add_filter( 'pmpro_has_membership_access_filter', 'pmpromrss_pmpro_has_membership_access_filter', 10, 4 );
 
 //remove enclosures for member feeds
 function pmprorss_rss_enclosure($enclosure)
