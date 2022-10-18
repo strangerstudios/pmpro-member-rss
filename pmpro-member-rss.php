@@ -149,3 +149,65 @@ function pmprorss_plugin_row_meta($links, $file) {
 	return $links;
 }
 add_filter('plugin_row_meta', 'pmprorss_plugin_row_meta', 10, 2);
+
+/**
+ * Display the Member RSS Key and allow it to be regenerated
+ *
+ * @since TBD
+ * @param  object $user The current user object that is being edited
+ * @return mixed HTML content
+ */
+function pmprorss_memberkeys_profile( $user ) { 
+
+	global $pmpro_levels;
+
+	$args = array(
+		'pmpromrss_regenerate_key' => 1,
+		'user_id' => $user->ID
+	);
+	?>
+
+    <h3><?php esc_html_e( 'Member RSS Key', 'pmpro-member-rss' ); ?></h3>
+
+    <table class="form-table">
+
+	    <tr id='pmpromrss_key'>
+	        <th><label for="address"><?php esc_html_e( 'Recent Posts Feed', 'pmpro-member-rss' ); ?></label></th>
+	        <td>
+	            <input type="text" name="pmpromrss_profile_key" id="pmpromrss_profile_key" readonly="readonly" value="<?php echo pmpromrss_getMemberKey( $user->ID ); ?>" class="regular-text" />&nbsp;<a href='<?php echo esc_html( add_query_arg( $args, get_edit_profile_url() ).'#pmpromrss_key' ); ?>' class='button button-primary'><?php esc_html_e( 'Regenerate Key', 'pmpro-member-rss' ); ?></a>
+	        </td>
+	    </tr>
+    	
+    </table>
+<?php }
+add_action( 'show_user_profile', 'pmprorss_memberkeys_profile' );
+add_action( 'edit_user_profile', 'pmprorss_memberkeys_profile' );
+
+/**
+ * Deletes the existing Member key and generates a new one
+ *
+ * @since TBD
+ * @return void
+ */
+function pmprorss_memberkeys_profile_regenerate() {
+
+	if ( empty( $_REQUEST['user_id'] ) ) {
+		return;
+	}
+  
+    if ( empty( $_REQUEST['pmpromrss_regenerate_key'] ) ) {
+    	return;
+    }
+
+    $user_id = intval( $_REQUEST['user_id'] );
+    
+	if ( !current_user_can( 'edit_user', $user_id ) ) { 
+		return false; 
+	}	
+
+    delete_user_meta( $user_id, 'pmpromrss_key' );
+    	
+   	pmpromrss_getMemberKey( $user_id );		
+
+}
+add_action( 'admin_init', 'pmprorss_memberkeys_profile_regenerate' );
