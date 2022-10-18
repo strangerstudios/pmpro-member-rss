@@ -122,8 +122,13 @@ function pmpromrss_pmpro_has_membership_access_filter( $hasaccess, $mypost, $myu
 	$is_feed = $wp_query->is_feed;
 	$wp_query->is_feed = false;
 
-	// Now check again with the RSS user.	
-	$hasaccess = pmpro_has_membership_access( $mypost, $pmpromrss_user_id );
+	// Now check again with the RSS user.
+	if ( ! empty( $mypost ) && ! empty( $mypost->ID ) ) {
+		$mypost_id = $mypost->ID;
+	} else {
+		$mypost_id = null;
+	}
+	$hasaccess = pmpro_has_membership_access( $mypost_id, $pmpromrss_user_id );
 
 	// Add the filter back.
 	add_filter( 'pmpro_has_membership_access_filter', 'pmpromrss_pmpro_has_membership_access_filter', 10, 4 );
