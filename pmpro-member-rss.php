@@ -77,19 +77,14 @@ add_action('pmpro_member_links_bottom', 'pmpromrss_pmpro_member_links_bottom');
 	Check for Member Key and Disable Content Filter in RSS Feed Items
 */
 //only filter if a valid member key is present
-function pmprorss_init()
-{
-	// TO DO: Need to bail early here if this not an RSS feed.
-
-	if(!empty($_REQUEST['memberkey']))
-	{		
-		global $wpdb;
-		$key = $_REQUEST['memberkey'];
-		global $pmpromrss_user_id;
+function pmprorss_init() {	
+	global $wpdb, $pmpromrss_user_id, $wp_query;
+	if( ! empty( $_REQUEST['memberkey'] ) ) {		
+		$key = preg_replace( '[0-9a-f]', '', $_REQUEST['memberkey'] );
 		$pmpromrss_user_id = $wpdb->get_var("SELECT user_id FROM $wpdb->usermeta WHERE meta_key = 'pmpromrss_key' AND meta_value = '" . esc_sql($key) . "' LIMIT 1");
 
 		// Use our search filter if PMPro set one up.
-		if ( has_filter( 'pre_get_posts', 'pmpro_search_filter' ) ) {
+		if ( $wp_query->is_feed && has_filter( 'pre_get_posts', 'pmpro_search_filter' ) ) {
 			remove_filter( 'pre_get_posts', 'pmpro_search_filter' );
 			add_filter( 'pre_get_posts', 'pmprorss_search_filter' );	
 		}
@@ -99,7 +94,7 @@ add_action('init', 'pmprorss_init', 1);
 
 /**
  * Override the current user when running search queries.
- *
+ * @since 0.3
  */
 function pmprorss_search_filter( $query ) {
 	global $current_user, $pmpromrss_user_id;
