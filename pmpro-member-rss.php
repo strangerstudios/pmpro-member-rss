@@ -129,7 +129,7 @@ function pmprorss_pmpro_rss_text_filter($text)
 {
 	global $post;
 	
-	$text = "Please visit " . get_permalink($post->ID) . " to access this member content.";
+	$text = sprintf( __( 'Please visit %s to access this member content.', 'pmpro-member-rss' ), get_permalink( $post->ID ) );
 	
 	return $text;
 }
@@ -211,3 +211,20 @@ function pmprorss_memberkeys_profile_regenerate() {
 
 }
 add_action( 'admin_init', 'pmprorss_memberkeys_profile_regenerate' );
+
+/*
+ * Generates the member key after the level has changed
+ *
+ * @param $level_id int Level ID being changed to
+ * @param $user_id int User ID this relates to
+ * @param $cancel_id int Level ID that is being cancelled
+ * 
+ * @since TBD
+ * @return void
+ */
+function pmprorss_after_level_change_generate_key( $level_id, $user_id, $cancel ) {
+
+	pmpromrss_getMemberKey( $user_id );
+
+}
+add_action( 'pmpro_after_change_membership_level', 'pmprorss_after_level_change_generate_key', 10, 3 );
