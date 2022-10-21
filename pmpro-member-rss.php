@@ -203,7 +203,7 @@ function pmprorss_memberkeys_profile( $user ) {
 	    <tr id='pmpromrss_key'>
 	        <th><label for="address"><?php esc_html_e( 'Key', 'pmpro-member-rss' ); ?></label></th>
 	        <td>
-	            <input type="text" name="pmpromrss_profile_key" id="pmpromrss_profile_key" readonly="readonly" value="<?php echo pmpromrss_getMemberKey( $user->ID ); ?>" class="regular-text" />&nbsp;<a href="<?php echo esc_url( add_query_arg( $args, get_edit_profile_url() ) ); ?>" class="button button-primary"><?php esc_html_e( 'Regenerate Key', 'pmpro-member-rss' ); ?></a>
+	            <input type="text" name="pmpromrss_profile_key" id="pmpromrss_profile_key" readonly="readonly" value="<?php echo pmpromrss_getMemberKey( $user->ID ); ?>" class="regular-text" />&nbsp;<a href='javascript:pmpro_askfirst("<?php esc_attr_e( "Are you sure you want to regenerate this user's key?", 'pmpro-member-rss' ); ?>", "<?php echo esc_url( add_query_arg( $args, get_edit_profile_url() ) ); ?>");' class="button button-primary"><?php esc_html_e( 'Regenerate Key', 'pmpro-member-rss' ); ?></a>
 	        </td>
 	    </tr>
     	
