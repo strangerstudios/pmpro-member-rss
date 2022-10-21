@@ -191,16 +191,17 @@ function pmprorss_memberkeys_profile( $user ) {
 
 	$args = array(
 		'pmpromrss_regenerate_key' => 1,
-		'user_id' => $user->ID
+		'user_id' => $user->ID,
+		'_wpnonce' => wp_create_nonce( 'pmpromrss_regenerate' )
 	);
 	?>
 
-    <h3><?php esc_html_e( 'Member RSS Key', 'pmpro-member-rss' ); ?></h3>
+    <h3><?php esc_html_e( 'Member RSS', 'pmpro-member-rss' ); ?></h3>
 
     <table class="form-table">
 
 	    <tr id='pmpromrss_key'>
-	        <th><label for="address"><?php esc_html_e( 'Recent Posts Feed', 'pmpro-member-rss' ); ?></label></th>
+	        <th><label for="address"><?php esc_html_e( 'Key', 'pmpro-member-rss' ); ?></label></th>
 	        <td>
 	            <input type="text" name="pmpromrss_profile_key" id="pmpromrss_profile_key" readonly="readonly" value="<?php echo pmpromrss_getMemberKey( $user->ID ); ?>" class="regular-text" />&nbsp;<a href='<?php echo esc_html( add_query_arg( $args, get_edit_profile_url() ).'#pmpromrss_key' ); ?>' class='button button-primary'><?php esc_html_e( 'Regenerate Key', 'pmpro-member-rss' ); ?></a>
 	        </td>
@@ -218,6 +219,10 @@ add_action( 'edit_user_profile', 'pmprorss_memberkeys_profile' );
  * @return void
  */
 function pmprorss_memberkeys_profile_regenerate() {
+
+	if ( ! empty( $_REQUEST['_wpnonce'] ) && ! wp_verify_nonce( $_REQUEST['_wpnonce'], 'pmpromrss_regenerate' ) ) {
+		return;
+	}
 
 	if ( empty( $_REQUEST['user_id'] ) ) {
 		return;
