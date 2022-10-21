@@ -203,7 +203,7 @@ function pmprorss_memberkeys_profile( $user ) {
 	    <tr id='pmpromrss_key'>
 	        <th><label for="address"><?php esc_html_e( 'Key', 'pmpro-member-rss' ); ?></label></th>
 	        <td>
-	            <input type="text" name="pmpromrss_profile_key" id="pmpromrss_profile_key" readonly="readonly" value="<?php echo pmpromrss_getMemberKey( $user->ID ); ?>" class="regular-text" />&nbsp;<a href='<?php echo esc_html( add_query_arg( $args, get_edit_profile_url() ).'#pmpromrss_key' ); ?>' class='button button-primary'><?php esc_html_e( 'Regenerate Key', 'pmpro-member-rss' ); ?></a>
+	            <input type="text" name="pmpromrss_profile_key" id="pmpromrss_profile_key" readonly="readonly" value="<?php echo pmpromrss_getMemberKey( $user->ID ); ?>" class="regular-text" />&nbsp;<a href="<?php echo esc_url( add_query_arg( $args, get_edit_profile_url() ) ); ?>" class="button button-primary"><?php esc_html_e( 'Regenerate Key', 'pmpro-member-rss' ); ?></a>
 	        </td>
 	    </tr>
     	
@@ -218,12 +218,7 @@ add_action( 'edit_user_profile', 'pmprorss_memberkeys_profile' );
  * @since TBD
  * @return void
  */
-function pmprorss_memberkeys_profile_regenerate() {
-
-	if ( ! empty( $_REQUEST['_wpnonce'] ) && ! wp_verify_nonce( $_REQUEST['_wpnonce'], 'pmpromrss_regenerate' ) ) {
-		return;
-	}
-
+function pmprorss_memberkeys_profile_regenerate() {	
 	if ( empty( $_REQUEST['user_id'] ) ) {
 		return;
 	}
@@ -231,6 +226,14 @@ function pmprorss_memberkeys_profile_regenerate() {
     if ( empty( $_REQUEST['pmpromrss_regenerate_key'] ) ) {
     	return;
     }
+	
+	if ( ! empty( $_REQUEST['_wpnonce'] ) && ! wp_verify_nonce( $_REQUEST['_wpnonce'], 'pmpromrss_regenerate' ) ) {
+		?>
+		<div class="notice notice-error">
+			<p><?php esc_html_e( 'Invalid nonce for regen. Try again.', 'pmpro-member-rss' ); ?></p>
+		</div>
+		<?php
+	}
 
     $user_id = intval( $_REQUEST['user_id'] );
     
@@ -240,8 +243,13 @@ function pmprorss_memberkeys_profile_regenerate() {
 
     delete_user_meta( $user_id, 'pmpromrss_key' );
     	
-   	pmpromrss_getMemberKey( $user_id );		
-
+   	pmpromrss_getMemberKey( $user_id );
+	
+	?>
+	<div class="notice notice-success">
+		<p><?php esc_html_e( 'A new key has been generated.', 'pmpro-member-rss' ); ?></p>
+	</div>
+	<?php
 }
 add_action( 'admin_init', 'pmprorss_memberkeys_profile_regenerate' );
 
