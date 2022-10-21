@@ -2,8 +2,8 @@
 Contributors: strangerstudios
 Tags: rss, feed, blubrry, powerpress, podcasts, podcasting, paid memberships pro, secure, protect, lock
 Requires at least: 3.5
-Tested up to: 4.3.1
-Stable tag: .2
+Tested up to: 6.0.3
+Stable tag: 0.2
 
 Create Member-Specific RSS Feeds for Paid Memberships Pro
 
@@ -48,6 +48,11 @@ Please post it in the issues section of GitHub and we'll fix it as soon as we ca
 Please visit our premium support site at http://www.paidmembershipspro.com for more documentation and our support forums.
 
 == Changelog ==
+= 0.3 - 2022-10-21
+* FEATURE: You can now regenerate a user's RSS key from the edit user page of the WP dashboard.
+* BUG FIX/ENHANCEMENT: Now using the pmpro_has_membership_access() function to account for all methods of protecting content.
+* BUG FIX/ENHANCEMENT: Now also generating a member RSS key (if needed) on level change in case that happens outside of checkout.
+* BUG FIX/ENHANCEMENT: Updating search queries so protected content is still visible in feeds when a member RSS key is used. 
 
 = .2. =
 * Now removing enclosures from member posts.

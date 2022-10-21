@@ -3,7 +3,7 @@
 Plugin Name: Paid Memberships Pro - Member RSS Add On
 Plugin URI: http://www.paidmembershipspro.com/wp/pmpro-member-rss/
 Description: Create Member-Specific RSS Feeds for Paid Memberships Pro
-Version: .2
+Version: 0.3
 Author: Stranger Studios
 Author URI: http://www.strangerstudios.com
 */
@@ -181,7 +181,7 @@ add_filter('plugin_row_meta', 'pmprorss_plugin_row_meta', 10, 2);
 /**
  * Display the Member RSS Key and allow it to be regenerated
  *
- * @since TBD
+ * @since 0.3
  * @param  object $user The current user object that is being edited
  * @return mixed HTML content
  */
@@ -215,7 +215,7 @@ add_action( 'edit_user_profile', 'pmprorss_memberkeys_profile' );
 /**
  * Deletes the existing Member key and generates a new one
  *
- * @since TBD
+ * @since 0.3
  * @return void
  */
 function pmprorss_memberkeys_profile_regenerate() {	
@@ -260,7 +260,7 @@ add_action( 'admin_init', 'pmprorss_memberkeys_profile_regenerate' );
  * @param $user_id int User ID this relates to
  * @param $cancel_id int Level ID that is being cancelled
  * 
- * @since TBD
+ * @since 0.3
  * @return void
  */
 function pmprorss_after_level_change_generate_key( $level_id, $user_id, $cancel ) {
