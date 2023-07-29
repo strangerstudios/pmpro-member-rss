@@ -196,7 +196,7 @@ function pmprorss_memberkeys_profile( $user ) {
 	);
 	?>
 
-    <h3><?php esc_html_e( 'Member RSS', 'pmpro-member-rss' ); ?></h3>
+    <h2><?php esc_html_e( 'Member RSS', 'pmpro-member-rss' ); ?></h2>
 
     <table class="form-table">
 
