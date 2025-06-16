@@ -166,17 +166,17 @@ add_filter('pmpro_rss_text_filter', 'pmprorss_pmpro_rss_text_filter');
 /*
 Function to add links to the plugin row meta
 */
-function pmprorss_plugin_row_meta($links, $file) {
-	if(strpos($file, 'pmpro-member-rss.php') !== false)
-	{
+function pmprorss_plugin_row_meta( $links, $file ) {
+	if ( strpos( $file, 'pmpro-member-rss.php' ) !== false ) {
 		$new_links = array(
-			'<a href="' . esc_url('http://paidmembershipspro.com/support/') . '" title="' . esc_attr( __( 'Visit Customer Support Forum', 'pmpro' ) ) . '">' . __( 'Support', 'pmpro' ) . '</a>',
+			'<a href="' . esc_url( 'https://www.paidmembershipspro.com/add-ons/pmpro-member-rss/' ) . '" title="' . esc_attr__( 'View Documentation', 'pmpro-member-rss' ) . '">' . __( 'Docs', 'pmpro-member-rss' ) . '</a>',
+			'<a href="' . esc_url( 'https://www.paidmembershipspro.com/support/' ) . '" title="' . esc_attr__( 'Visit Customer Support Forum', 'pmpro-member-rss' ) . '">' . __( 'Support', 'pmpro-member-rss' ) . '</a>',
 		);
-		$links = array_merge($links, $new_links);
+		$links     = array_merge( $links, $new_links );
 	}
 	return $links;
 }
-add_filter('plugin_row_meta', 'pmprorss_plugin_row_meta', 10, 2);
+add_filter( 'plugin_row_meta', 'pmprorss_plugin_row_meta', 10, 2 );
 
 /**
  * Display the Member RSS Key and allow it to be regenerated
