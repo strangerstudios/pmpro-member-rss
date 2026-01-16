@@ -92,6 +92,62 @@ function pmprorss_init() {
 }
 add_action('init', 'pmprorss_init', 1);
 
+/*
+	Check for Basic Auth on Feed Requests Without Member Key
+*/
+function pmprorss_basic_auth_challenge() {
+	global $pmpromrss_user_id, $wp_query;
+
+	// Only proceed if this is a feed request
+	if ( ! is_feed() ) {
+		return;
+	}
+
+	// If we already have a valid member key, don't challenge for Basic Auth
+	if ( ! empty( $pmpromrss_user_id ) ) {
+		return;
+	}
+
+	// Check for our parameter to prompt Basic Auth login.
+	if ( ! empty( $_GET['pmpromrss_basic_auth'] ) ) {
+		// No credentials provided, send Basic Auth challenge
+		header( 'WWW-Authenticate: Basic realm="Private Feed - Member Login Required"' );
+		header( 'HTTP/1.0 401 Unauthorized' );
+		echo 'Authentication required. Please provide your WordPress username and password.';
+		exit;
+	}
+
+	// Check if Basic Auth credentials are provided
+	if ( ! isset( $_SERVER['PHP_AUTH_USER'] ) || ! isset( $_SERVER['PHP_AUTH_PW'] ) ) {
+		return;
+	}
+
+	// Credentials provided, attempt to authenticate
+	$username = $_SERVER['PHP_AUTH_USER'];
+	$password = $_SERVER['PHP_AUTH_PW'];
+
+	// Use WordPress authentication
+	$user = wp_authenticate( $username, $password );
+
+	// Check if authentication failed
+	if ( is_wp_error( $user ) ) {
+		header( 'HTTP/1.0 403 Forbidden' );
+		echo 'Invalid username or password.';
+		exit;
+	}
+
+	// Authentication successful - set the RSS user ID
+	// This allows the existing membership access filter to work
+	$pmpromrss_user_id = $user->ID;
+
+	// Use our search filter if PMPro set one up.
+	if ( $wp_query->is_feed && has_filter( 'pre_get_posts', 'pmpro_search_filter' ) ) {
+		remove_filter( 'pre_get_posts', 'pmpro_search_filter' );
+		add_filter( 'pre_get_posts', 'pmprorss_search_filter' );
+	}
+}
+add_action( 'template_redirect', 'pmprorss_basic_auth_challenge' );
+
 /**
  * Override the current user when running search queries.
  * @since 0.3
