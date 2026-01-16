@@ -76,21 +76,42 @@ add_action('pmpro_member_links_bottom', 'pmpromrss_pmpro_member_links_bottom');
 /*
 	Check for Member Key and Disable Content Filter in RSS Feed Items
 */
-//only filter if a valid member key is present
-function pmprorss_init() {	
-	global $wpdb, $pmpromrss_user_id, $wp_query;
-	if( ! empty( $_REQUEST['memberkey'] ) ) {		
-		$key = preg_replace( '[0-9a-f]', '', $_REQUEST['memberkey'] );
-		$pmpromrss_user_id = $wpdb->get_var("SELECT user_id FROM $wpdb->usermeta WHERE meta_key = 'pmpromrss_key' AND meta_value = '" . esc_sql($key) . "' LIMIT 1");
+/**
+ * Set up the member RSS key user ID early if present.
+ */
+function pmprorss_init() {
+	global $wpdb, $pmpromrss_user_id;
 
-		// Use our search filter if PMPro set one up.
-		if ( $wp_query->is_feed && has_filter( 'pre_get_posts', 'pmpro_search_filter' ) ) {
-			remove_filter( 'pre_get_posts', 'pmpro_search_filter' );
-			add_filter( 'pre_get_posts', 'pmprorss_search_filter' );	
-		}
-	}	
+	if ( ! empty( $_REQUEST['memberkey'] ) ) {
+		$key = preg_replace( '/[^0-9a-f]/', '', $_REQUEST['memberkey'] );
+		$pmpromrss_user_id = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT user_id FROM $wpdb->usermeta WHERE meta_key = 'pmpromrss_key' AND meta_value = %s LIMIT 1",
+				$key
+			)
+		);
+	}
 }
-add_action('init', 'pmprorss_init', 1);
+add_action( 'init', 'pmprorss_init', 1 );
+
+/**
+ * Filter feed queries to use the member key user's access.
+ */
+function pmprorss_pre_get_posts( $query ) {
+	global $pmpromrss_user_id;
+
+	// Only filter feed queries with a valid member key.
+	if ( empty( $pmpromrss_user_id ) || ! $query->is_feed() ) {
+		return;
+	}
+
+	// Remove PMPro's search filter for this feed query and add ours.
+	if ( has_filter( 'pre_get_posts', 'pmpro_search_filter' ) ) {
+		remove_filter( 'pre_get_posts', 'pmpro_search_filter' );
+		add_filter( 'pre_get_posts', 'pmprorss_search_filter' );
+	}
+}
+add_action( 'pre_get_posts', 'pmprorss_pre_get_posts', 0 );
 
 /**
  * Override the current user when running search queries.
