@@ -76,42 +76,21 @@ add_action('pmpro_member_links_bottom', 'pmpromrss_pmpro_member_links_bottom');
 /*
 	Check for Member Key and Disable Content Filter in RSS Feed Items
 */
-/**
- * Set up the member RSS key user ID early if present.
- */
-function pmprorss_init() {
-	global $wpdb, $pmpromrss_user_id;
+//only filter if a valid member key is present
+function pmprorss_init() {	
+	global $wpdb, $pmpromrss_user_id, $wp_query;
+	if( ! empty( $_REQUEST['memberkey'] ) ) {		
+		$key = preg_replace( '[0-9a-f]', '', $_REQUEST['memberkey'] );
+		$pmpromrss_user_id = $wpdb->get_var("SELECT user_id FROM $wpdb->usermeta WHERE meta_key = 'pmpromrss_key' AND meta_value = '" . esc_sql($key) . "' LIMIT 1");
 
-	if ( ! empty( $_REQUEST['memberkey'] ) ) {
-		$key = preg_replace( '/[^0-9a-f]/', '', $_REQUEST['memberkey'] );
-		$pmpromrss_user_id = $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT user_id FROM $wpdb->usermeta WHERE meta_key = 'pmpromrss_key' AND meta_value = %s LIMIT 1",
-				$key
-			)
-		);
-	}
+		// Use our search filter if PMPro set one up.
+		if ( $wp_query->is_feed && has_filter( 'pre_get_posts', 'pmpro_search_filter' ) ) {
+			remove_filter( 'pre_get_posts', 'pmpro_search_filter' );
+			add_filter( 'pre_get_posts', 'pmprorss_search_filter' );	
+		}
+	}	
 }
-add_action( 'init', 'pmprorss_init', 1 );
-
-/**
- * Filter feed queries to use the member key user's access.
- */
-function pmprorss_pre_get_posts( $query ) {
-	global $pmpromrss_user_id;
-
-	// Only filter feed queries with a valid member key.
-	if ( empty( $pmpromrss_user_id ) || ! $query->is_feed() ) {
-		return;
-	}
-
-	// Remove PMPro's search filter for this feed query and add ours.
-	if ( has_filter( 'pre_get_posts', 'pmpro_search_filter' ) ) {
-		remove_filter( 'pre_get_posts', 'pmpro_search_filter' );
-		add_filter( 'pre_get_posts', 'pmprorss_search_filter' );
-	}
-}
-add_action( 'pre_get_posts', 'pmprorss_pre_get_posts', 0 );
+add_action('init', 'pmprorss_init', 1);
 
 /**
  * Override the current user when running search queries.
@@ -187,17 +166,17 @@ add_filter('pmpro_rss_text_filter', 'pmprorss_pmpro_rss_text_filter');
 /*
 Function to add links to the plugin row meta
 */
-function pmprorss_plugin_row_meta($links, $file) {
-	if(strpos($file, 'pmpro-member-rss.php') !== false)
-	{
+function pmprorss_plugin_row_meta( $links, $file ) {
+	if ( strpos( $file, 'pmpro-member-rss.php' ) !== false ) {
 		$new_links = array(
-			'<a href="' . esc_url('http://paidmembershipspro.com/support/') . '" title="' . esc_attr( __( 'Visit Customer Support Forum', 'pmpro' ) ) . '">' . __( 'Support', 'pmpro' ) . '</a>',
+			'<a href="' . esc_url( 'https://www.paidmembershipspro.com/add-ons/pmpro-member-rss/' ) . '" title="' . esc_attr__( 'View Documentation', 'pmpro-member-rss' ) . '">' . __( 'Docs', 'pmpro-member-rss' ) . '</a>',
+			'<a href="' . esc_url( 'https://www.paidmembershipspro.com/support/' ) . '" title="' . esc_attr__( 'Visit Customer Support Forum', 'pmpro-member-rss' ) . '">' . __( 'Support', 'pmpro-member-rss' ) . '</a>',
 		);
-		$links = array_merge($links, $new_links);
+		$links     = array_merge( $links, $new_links );
 	}
 	return $links;
 }
-add_filter('plugin_row_meta', 'pmprorss_plugin_row_meta', 10, 2);
+add_filter( 'plugin_row_meta', 'pmprorss_plugin_row_meta', 10, 2 );
 
 /**
  * Display the Member RSS Key and allow it to be regenerated
