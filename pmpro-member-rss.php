@@ -360,7 +360,7 @@ add_filter( 'pmpro_rss_text_filter', 'pmprorss_pmpro_rss_text_filter' );
 function pmprorss_plugin_row_meta( $links, $file ) {
 	if( strpos( $file, 'pmpro-member-rss.php' ) !== false ) {
 		$new_links = array(
-			'<a href="' . esc_url( 'http://paidmembershipspro.com/support/' ) . '" title="' . esc_attr__( 'Visit Customer Support Forum', 'pmpro-member-rss' ) . '">' . esc_html__( 'Support', 'pmpro-member-rss' ) . '</a>',
+			'<a href="' . esc_url( 'https://www.paidmembershipspro.com/support/' ) . '" title="' . esc_attr__( 'Visit Customer Support Forum', 'pmpro-member-rss' ) . '">' . esc_html__( 'Support', 'pmpro-member-rss' ) . '</a>',
 		);
 		$links = array_merge( $links, $new_links );
 	}
