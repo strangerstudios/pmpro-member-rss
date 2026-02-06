@@ -1,4 +1,4 @@
-<!-- ![](pmpro-member-rss-banner.png) -->
+![](pmpro-member-rss-banner.jpg)
 
 # [Paid Memberships Pro - Member RSS Feed](https://www.paidmembershipspro.com/add-ons/pmpro-member-rss/) #
 [comment]: # (Generate badges from shields.io, only works for .org plugins to get other stats etc. We'd have to create our own endpoints for Premium plugins)
