@@ -1,12 +1,16 @@
 <?php
-/*
-Plugin Name: Paid Memberships Pro - Member RSS Add On
-Plugin URI: http://www.paidmembershipspro.com/wp/pmpro-member-rss/
-Description: Create Member-Specific RSS Feeds for Paid Memberships Pro
-Version: 0.3
-Author: Stranger Studios
-Author URI: http://www.strangerstudios.com
+/**
+ * Plugin Name: Paid Memberships Pro - Member RSS Add On
+ * Plugin URI: http://www.paidmembershipspro.com/wp/pmpro-member-rss/
+ * Description: Create Member-Specific RSS Feeds for Paid Memberships Pro
+ * Version: 0.3
+ * Author: Stranger Studios
+ * Author URI: http://www.strangerstudios.com
+ * Text Domain: pmpro-member-rss
+ * Domain Path: /languages
+ * License: GPLv2 or later
 */
+
 /*
 	1. Generate a random key for each user.
 	2. Check for &memberkey param in RSS URL.
@@ -14,6 +18,18 @@ Author URI: http://www.strangerstudios.com
 	
 	To add more RSS URLs, use the pmpromrss_feeds filter.
 */
+
+/**
+ * Load the plugin text domain.
+ * 
+ * @since TBD
+ *
+ * @return void
+ */
+function pmpromrss_load_plugin_textdomain() {
+	load_plugin_textdomain( 'pmpro-member-rss', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' ); 
+}
+add_action( 'plugins_loaded', 'pmpromrss_load_plugin_textdomain' );
 
 /*
 	Utility Functions
