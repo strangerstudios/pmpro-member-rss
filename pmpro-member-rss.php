@@ -36,7 +36,12 @@ function pmpromrss_getMemberKey( $user_id = NULL ) {
 		return false;
 	}
 		
-	$user = get_userdata($user_id);
+	$user = get_userdata( $user_id );
+
+	// Make sure the user exists when trying to get the key. The $user_id passed in could be invalid.
+	if ( ! $user || empty( $user->ID ) ) {
+		return false;
+	}
 
 	//Get the member RSS key
 	$key = get_user_meta( $user->ID, "pmpromrss_key", true );
@@ -59,7 +64,7 @@ function pmpromrss_getMemberKey( $user_id = NULL ) {
  * @param int|null $user_id The WordPress user ID. If null, defaults to the current user.
  * @return string URL with member key added as a query parameter.
  */
-function pmpromrss_url( $url, $user_id = NULL )  {
+function pmpromrss_url( $url, $user_id = NULL ) {
 	$key = pmpromrss_getMemberKey( $user_id );
 	return add_query_arg( "memberkey", $key, $url );
 }
@@ -77,7 +82,7 @@ function pmpromrss_pmpro_member_links_bottom() {
 	//show URLs
 	foreach( $feeds as $title => $feed ) {
 	?>
-		<li><a href="<?php echo pmpromrss_url($feed);?>"><?php echo $title;?></a></li>
+		<li><a href="<?php echo esc_url( pmpromrss_url( $feed ) );?>"><?php echo esc_html( $title ); ?></a></li>
 	<?php
 	}
 }
@@ -124,9 +129,11 @@ function pmprorss_pre_get_posts( $query ) {
 }
 add_action( 'pre_get_posts', 'pmprorss_pre_get_posts', 0 );
 
-/*
-	Check for Basic Auth on Feed Requests Without Member Key
-*/
+/**
+ * Check for Basic Auth on Feed Requests Without Member Key
+ * 
+ * @since TBD
+ */
 function pmprorss_basic_auth_challenge() {
 	global $pmpromrss_user_id, $wp_query;
 
@@ -157,7 +164,7 @@ function pmprorss_basic_auth_challenge() {
 	if ( pmpro_is_spammer() ) {
 		status_header( 403 );
 		header( 'Content-Type: text/plain; charset=' . get_bloginfo( 'charset' ) );
-		esc_html_e( 'Slow down. Access denied. Please try again later', 'pmpro-member-rss' );
+		esc_html_e( 'Slow down. Access denied. Please try again later.', 'pmpro-member-rss' );
 		exit;
 	}
 
@@ -178,6 +185,7 @@ function pmprorss_basic_auth_challenge() {
 
 	// There was an error authenticating the user.
 	if ( is_wp_error( $user ) ) {
+		pmpro_track_spam_activity(); // Count the activity here as well for failed logins.
 		status_header( 403 );
 		header( 'Content-Type: text/plain; charset=' . get_bloginfo( 'charset' ) );
 		esc_html_e( 'Access denied. Invalid username or application password.', 'pmpro-member-rss' );
@@ -197,11 +205,12 @@ function pmprorss_basic_auth_challenge() {
 add_action( 'template_redirect', 'pmprorss_basic_auth_challenge' );
 
 /**
- * Enable Application Password authentication for Feed Requets.
+ * Enable Application Password authentication for Feed Requests.
  * 
  * @since TBD
  * 
- * @is_api_request boolean Is this an API request, we can spoof this to enable it for our requests.
+ * @param boolean $is_api_request Is this an API request, we can spoof this to enable it for our requests.
+ * @return $boolean True if we're trying to authenticate a feed request, otherwise return the original value.
  */
 function pmprorss_allow_application_passwords( $is_api_request ) {
 	// Treat our feed request as an "API request" so application passwords are allowed.
@@ -217,47 +226,48 @@ add_filter( 'application_password_is_api_request', 'pmprorss_allow_application_p
  * Get the authorization headers from the request for various servers.
  * 
  * @since TBD
+ * @return array Array containing 'username' and 'password' keys.  
  */
 function pmprorss_get_auth_credentials() {
-    $username = '';
-    $password = '';
-    $auth_header = null;
+	$username = '';
+	$password = '';
+	$auth_header = null;
 
-    // Try different methods to get the Authorization header
-    if ( isset( $_SERVER['HTTP_AUTHORIZATION'] ) ) {
-        $auth_header = $_SERVER['HTTP_AUTHORIZATION'];
-    } elseif ( isset( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) ) {
-        $auth_header = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
-    } elseif ( function_exists( 'apache_request_headers' ) ) {
-        $headers = apache_request_headers();
-        if ( isset( $headers['Authorization'] ) ) {
-            $auth_header = $headers['Authorization'];
-        } elseif ( isset( $headers['authorization'] ) ) {
-            $auth_header = $headers['authorization'];
-        }
-    }
+	// Try different methods to get the Authorization header
+	if ( isset( $_SERVER['HTTP_AUTHORIZATION'] ) ) {
+		$auth_header = $_SERVER['HTTP_AUTHORIZATION'];
+	} elseif ( isset( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) ) {
+		$auth_header = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+	} elseif ( function_exists( 'apache_request_headers' ) ) {
+		$headers = apache_request_headers();
+		if ( isset( $headers['Authorization'] ) ) {
+			$auth_header = $headers['Authorization'];
+		} elseif ( isset( $headers['authorization'] ) ) {
+			$auth_header = $headers['authorization'];
+		}
+	}
 
-    // Parse Basic auth from the header
-    if ( $auth_header && stripos( $auth_header, 'Basic ' ) === 0 ) {
-        $credentials = base64_decode( substr( $auth_header, 6 ) );
-        if ( $credentials && strpos( $credentials, ':' ) !== false ) {
-            list( $username, $password ) = explode( ':', $credentials, 2 );
-        }
-    }
+	// Parse Basic auth from the header
+	if ( $auth_header && stripos( $auth_header, 'Basic ' ) === 0 ) {
+		$credentials = base64_decode( substr( $auth_header, 6 ) );
+		if ( $credentials && strpos( $credentials, ':' ) !== false ) {
+			list( $username, $password ) = explode( ':', $credentials, 2 );
+		}
+	}
 
-    // Fallback to PHP_AUTH_USER/PHP_AUTH_PW (may not work on all servers)
-    if ( empty( $username ) && empty( $password ) ) {
-        $username = $_SERVER['PHP_AUTH_USER'] ?? '';
-        $password = $_SERVER['PHP_AUTH_PW'] ?? '';
-    }
+	// Fallback to PHP_AUTH_USER/PHP_AUTH_PW (may not work on all servers)
+	if ( empty( $username ) && empty( $password ) ) {
+		$username = $_SERVER['PHP_AUTH_USER'] ?? '';
+		$password = $_SERVER['PHP_AUTH_PW'] ?? '';
+	}
 
-    // Sanitize username but leave password as-is as it needs to match.
-    $username = sanitize_user( $username );
+	// Sanitize username but leave password as-is as it needs to match.
+	$username = sanitize_user( $username );
 
-    return array(
-        'username' => $username,
-        'password' => $password,
-    );
+	return array(
+		'username' => $username,
+		'password' => $password,
+	);
 }
 
 /**
@@ -279,6 +289,12 @@ function pmprorss_search_filter( $query ) {
  * Filter the has_membership_access_filter when processing RSS feeds.
  *
  * @since 0.1
+ *  
+ * @param bool $hasaccess Whether the user has access  
+ * @param WP_Post|null $mypost The post object being checked  
+ * @param WP_User|null $myuser The user being checked  
+ * @param array $post_membership_levels Required membership levels  
+ * @return bool Whether the user has access to the content  
  */
 function pmpromrss_pmpro_has_membership_access_filter( $hasaccess, $mypost, $myuser, $post_membership_levels ) {
 	global $pmpromrss_user_id, $wp_query;		
@@ -317,8 +333,8 @@ add_filter( 'pmpro_has_membership_access_filter', 'pmpromrss_pmpro_has_membershi
  *
  * @since 0.1
  * 
- * @param string $enclosure 
- * @return string $modified_enclosure
+ * @param string $enclosure  The default enclosure for the RSS item.
+ * @return string $enclosure The modified enclosure, or empty string if the user does not have access to the content.
  */
 function pmprorss_rss_enclosure( $enclosure ) {
 	global $post;
@@ -341,6 +357,7 @@ add_filter( 'rss_enclosure', 'pmprorss_rss_enclosure', 20 );
  * 
  * @since 0.1
  * 
+ * @param string $text The original RSS text to filter.  
  * @return string $text The modified RSS text.
  */
 function pmprorss_pmpro_rss_text_filter( $text ) {
