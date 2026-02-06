@@ -176,7 +176,7 @@ function pmprorss_basic_auth_challenge() {
 	// Only use application passwords for authentication, not regular passwords.
 	$user = wp_authenticate_application_password( null, $username, $password );
 
-	// There was an error authentication the user.
+	// There was an error authenticating the user.
 	if ( is_wp_error( $user ) ) {
 		status_header( 403 );
 		header( 'Content-Type: text/plain; charset=' . get_bloginfo( 'charset' ) );
