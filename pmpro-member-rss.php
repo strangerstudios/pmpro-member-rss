@@ -7,6 +7,7 @@ Version: 0.3
 Author: Stranger Studios
 Author URI: http://www.strangerstudios.com
 */
+
 /*
 	1. Generate a random key for each user.
 	2. Check for &memberkey param in RSS URL.
@@ -15,31 +16,38 @@ Author URI: http://www.strangerstudios.com
 	To add more RSS URLs, use the pmpromrss_feeds filter.
 */
 
-/*
-	Utility Functions
-*/
-//get a member key
-function pmpromrss_getMemberKey($user_id = NULL)
-{
+/**
+ * Get a member's RSS key.
+ *
+ * @since 0.1
+ * 
+ * @param int $user_id
+ * @return string Member RSS key, or false if no user found.
+ */
+function pmpromrss_getMemberKey( $user_id = NULL ) {
 	//default to current user
-	if(empty($user_id))
-	{
+	if ( empty( $user_id ) ) {
 		global $current_user;
 		$user_id = $current_user->ID;
 	}
 	
 	//make sure we have a user
-	if(empty($user_id))
+	if ( empty( $user_id ) ) {
 		return false;
+	}
 		
-	$user = get_userdata($user_id);
+	$user = get_userdata( $user_id );
 
-	//get key
-	$key = get_user_meta($user->ID, "pmpromrss_key", true);
+	// Make sure the user exists when trying to get the key. The $user_id passed in could be invalid.
+	if ( ! $user || empty( $user->ID ) ) {
+		return false;
+	}
+
+	//Get the member RSS key
+	$key = get_user_meta( $user->ID, "pmpromrss_key", true );
 	
 	//create member key if they don't already have one
-	if(empty($key))
-	{
+	if ( empty( $key ) ) {
 		$key = md5(time() . $user->user_login . AUTH_KEY);
 		update_user_meta($user->ID, "pmpromrss_key", $key);
 	}
@@ -47,37 +55,43 @@ function pmpromrss_getMemberKey($user_id = NULL)
 	return $key;
 }
 
-//add the memberkey to a url
-function pmpromrss_url($url, $user_id = NULL)
-{
-	$key = pmpromrss_getMemberKey($user_id);
-	
-	return add_query_arg("memberkey", $key, $url);
+/**
+ * Add the member key automatically to a URL.
+ *
+ * @since 0.1
+ * 
+ * @param string $url The URL to add the member key to.
+ * @param int|null $user_id The WordPress user ID. If null, defaults to the current user.
+ * @return string URL with member key added as a query parameter.
+ */
+function pmpromrss_url( $url, $user_id = NULL ) {
+	$key = pmpromrss_getMemberKey( $user_id );
+	return add_query_arg( "memberkey", $key, $url );
 }
 	
-/*
-	Show RSS Feeds with Member Key on Membership Account Page
-*/
-function pmpromrss_pmpro_member_links_bottom()
-{	
+/**
+ *  Show RSS Feeds with Member Key on Membership Account Page
+ * 
+ * @since 0.1
+ * 
+ */
+function pmpromrss_pmpro_member_links_bottom() {	
 	//show links to RSS feeds (format is title => url)
-	$feeds = apply_filters("pmpromrss_feeds", array("Recent Posts Feed" => get_bloginfo('rss_url')));
+	$feeds = apply_filters("pmpromrss_feeds", array( "Recent Posts Feed" => get_bloginfo('rss_url') ) );
 	
 	//show URLs
-	foreach($feeds as $title => $feed)
-	{
+	foreach( $feeds as $title => $feed ) {
 	?>
-		<li><a href="<?php echo pmpromrss_url($feed);?>"><?php echo $title;?></a></li>
+		<li><a href="<?php echo esc_url( pmpromrss_url( $feed ) );?>"><?php echo esc_html( $title ); ?></a></li>
 	<?php
 	}
 }
 add_action('pmpro_member_links_bottom', 'pmpromrss_pmpro_member_links_bottom');
 
-/*
-	Check for Member Key and Disable Content Filter in RSS Feed Items
-*/
 /**
- * Set up the member RSS key user ID early if present.
+ * Check for Member Key and Disable Content Filter in RSS Feed Items
+ *
+ * @since 0.1
  */
 function pmprorss_init() {
 	global $wpdb, $pmpromrss_user_id;
@@ -96,6 +110,8 @@ add_action( 'init', 'pmprorss_init', 1 );
 
 /**
  * Filter feed queries to use the member key user's access.
+ * 
+ * @since TBD
  */
 function pmprorss_pre_get_posts( $query ) {
 	global $pmpromrss_user_id;
@@ -114,6 +130,147 @@ function pmprorss_pre_get_posts( $query ) {
 add_action( 'pre_get_posts', 'pmprorss_pre_get_posts', 0 );
 
 /**
+ * Check for Basic Auth on Feed Requests Without Member Key
+ * 
+ * @since TBD
+ */
+function pmprorss_basic_auth_challenge() {
+	global $pmpromrss_user_id, $wp_query;
+
+	// Only proceed if this is a feed request
+	if ( ! is_feed() ) {
+		return;
+	}
+
+	// If we already have a valid member key, don't challenge for Basic Auth
+	if ( ! empty( $pmpromrss_user_id ) ) {
+		return;
+	}
+
+	// Check for our parameter to prompt Basic Auth login.
+	if ( empty( $_GET['pmpromrss_basic_auth'] ) ) {
+		return;
+	}
+
+	// PMPro may not be installed, let's not try to log in or anything.
+	if ( ! function_exists( 'pmpro_is_spammer' ) || ! function_exists( 'pmpro_track_spam_activity' ) ) {
+		status_header( 403 );
+		header( 'Content-Type: text/plain; charset=' . get_bloginfo( 'charset' ) );
+		esc_html_e( 'Paid Memberships Pro not activated. Please ensure you have it installed and activated.', 'pmpro-member-rss' );
+		exit;
+	}
+
+	// No spammers allowed.
+	if ( pmpro_is_spammer() ) {
+		status_header( 403 );
+		header( 'Content-Type: text/plain; charset=' . get_bloginfo( 'charset' ) );
+		esc_html_e( 'Slow down. Access denied. Please try again later.', 'pmpro-member-rss' );
+		exit;
+	}
+
+	$credentials = pmprorss_get_auth_credentials();
+	$username = $credentials['username'];
+	$password = $credentials['password'];
+
+	if ( empty( $username ) || empty( $password ) ) {
+		pmpro_track_spam_activity(); // Count the activity here now.
+		status_header( 401 );
+		header( 'WWW-Authenticate: Basic realm="Private Feed - Member Login Required"' );
+		esc_html_e( 'Authentication required. Please provide your WordPress username and application password.', 'pmpro-member-rss' );
+		exit;
+	}
+
+	// Only use application passwords for authentication, not regular passwords.
+	$user = wp_authenticate_application_password( null, $username, $password );
+
+	// There was an error authenticating the user.
+	if ( is_wp_error( $user ) ) {
+		pmpro_track_spam_activity(); // Count the activity here as well for failed logins.
+		status_header( 403 );
+		header( 'Content-Type: text/plain; charset=' . get_bloginfo( 'charset' ) );
+		esc_html_e( 'Access denied. Invalid username or application password.', 'pmpro-member-rss' );
+		exit;
+	}
+
+	// Authentication successful - set the RSS user ID
+	// This allows the existing membership access filter to work
+	$pmpromrss_user_id = $user->ID;
+
+	// Use our search filter if PMPro set one up.
+	if ( $wp_query->is_feed && has_filter( 'pre_get_posts', 'pmpro_search_filter' ) ) {
+		remove_filter( 'pre_get_posts', 'pmpro_search_filter' );
+		add_filter( 'pre_get_posts', 'pmprorss_search_filter' );
+	}
+}
+add_action( 'template_redirect', 'pmprorss_basic_auth_challenge' );
+
+/**
+ * Enable Application Password authentication for Feed Requests.
+ * 
+ * @since TBD
+ * 
+ * @param boolean $is_api_request Is this an API request, we can spoof this to enable it for our requests.
+ * @return $boolean True if we're trying to authenticate a feed request, otherwise return the original value.
+ */
+function pmprorss_allow_application_passwords( $is_api_request ) {
+	// Treat our feed request as an "API request" so application passwords are allowed.
+	if ( ! empty( $_GET['pmpromrss_basic_auth'] ) ) {
+		return true;
+	}
+	return $is_api_request;
+}
+add_filter( 'application_password_is_api_request', 'pmprorss_allow_application_passwords', 10, 1 );
+
+
+/**
+ * Get the authorization headers from the request for various servers.
+ * 
+ * @since TBD
+ * @return array Array containing 'username' and 'password' keys.  
+ */
+function pmprorss_get_auth_credentials() {
+	$username = '';
+	$password = '';
+	$auth_header = null;
+
+	// Try different methods to get the Authorization header
+	if ( isset( $_SERVER['HTTP_AUTHORIZATION'] ) ) {
+		$auth_header = $_SERVER['HTTP_AUTHORIZATION'];
+	} elseif ( isset( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) ) {
+		$auth_header = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+	} elseif ( function_exists( 'apache_request_headers' ) ) {
+		$headers = apache_request_headers();
+		if ( isset( $headers['Authorization'] ) ) {
+			$auth_header = $headers['Authorization'];
+		} elseif ( isset( $headers['authorization'] ) ) {
+			$auth_header = $headers['authorization'];
+		}
+	}
+
+	// Parse Basic auth from the header
+	if ( $auth_header && stripos( $auth_header, 'Basic ' ) === 0 ) {
+		$credentials = base64_decode( substr( $auth_header, 6 ) );
+		if ( $credentials && strpos( $credentials, ':' ) !== false ) {
+			list( $username, $password ) = explode( ':', $credentials, 2 );
+		}
+	}
+
+	// Fallback to PHP_AUTH_USER/PHP_AUTH_PW (may not work on all servers)
+	if ( empty( $username ) && empty( $password ) ) {
+		$username = $_SERVER['PHP_AUTH_USER'] ?? '';
+		$password = $_SERVER['PHP_AUTH_PW'] ?? '';
+	}
+
+	// Sanitize username but leave password as-is as it needs to match.
+	$username = sanitize_user( $username );
+
+	return array(
+		'username' => $username,
+		'password' => $password,
+	);
+}
+
+/**
  * Override the current user when running search queries.
  * @since 0.3
  */
@@ -128,7 +285,17 @@ function pmprorss_search_filter( $query ) {
 	$current_user = $current_user_backup;
 }
 
-//update has access filter
+/**
+ * Filter the has_membership_access_filter when processing RSS feeds.
+ *
+ * @since 0.1
+ *  
+ * @param bool $hasaccess Whether the user has access  
+ * @param WP_Post|null $mypost The post object being checked  
+ * @param WP_User|null $myuser The user being checked  
+ * @param array $post_membership_levels Required membership levels  
+ * @return bool Whether the user has access to the content  
+ */
 function pmpromrss_pmpro_has_membership_access_filter( $hasaccess, $mypost, $myuser, $post_membership_levels ) {
 	global $pmpromrss_user_id, $wp_query;		
 	
@@ -161,39 +328,59 @@ function pmpromrss_pmpro_has_membership_access_filter( $hasaccess, $mypost, $myu
 }
 add_filter( 'pmpro_has_membership_access_filter', 'pmpromrss_pmpro_has_membership_access_filter', 10, 4 );
 
-//remove enclosures for member feeds
-function pmprorss_rss_enclosure($enclosure)
-{
+/**
+ * Remove enclosures for member feeds when the person does not have access to the content.
+ *
+ * @since 0.1
+ * 
+ * @param string $enclosure  The default enclosure for the RSS item.
+ * @return string $enclosure The modified enclosure, or empty string if the user does not have access to the content.
+ */
+function pmprorss_rss_enclosure( $enclosure ) {
 	global $post;
 	
-	if(!pmpro_has_membership_access())
+	if ( ! function_exists( 'pmpro_has_membership_access' ) ) {
+		return $enclosure;
+	}
+
+	// Remove the enclosure.
+	if ( ! pmpro_has_membership_access() ) {
 		$enclosure = "";
+	}
 	
 	return $enclosure;
 }
-add_filter('rss_enclosure', 'pmprorss_rss_enclosure', 20);
+add_filter( 'rss_enclosure', 'pmprorss_rss_enclosure', 20 );
 
-//better rss messages
-function pmprorss_pmpro_rss_text_filter($text)
-{
+/**
+ * Improve the RSS text message when viewing the feed.
+ * 
+ * @since 0.1
+ * 
+ * @param string $text The original RSS text to filter.  
+ * @return string $text The modified RSS text.
+ */
+function pmprorss_pmpro_rss_text_filter( $text ) {
 	global $post;
 	
-	$text = sprintf( __( 'Please visit %s to access this member content.', 'pmpro-member-rss' ), get_permalink( $post->ID ) );
+	$text = sprintf( esc_html__( 'Please visit %s to access this member content.', 'pmpro-member-rss' ), esc_url( get_permalink( $post->ID ) ) );
 	
 	return $text;
 }
-add_filter('pmpro_rss_text_filter', 'pmprorss_pmpro_rss_text_filter');
+add_filter( 'pmpro_rss_text_filter', 'pmprorss_pmpro_rss_text_filter' );
 
-/*
-Function to add links to the plugin row meta
-*/
+/**
+ * Function to add links to the plugin row meta
+ * 
+ * @since 0.1 
+ */
 function pmprorss_plugin_row_meta( $links, $file ) {
-	if ( strpos( $file, 'pmpro-member-rss.php' ) !== false ) {
+	if( strpos( $file, 'pmpro-member-rss.php' ) !== false ) {
 		$new_links = array(
-			'<a href="' . esc_url( 'https://www.paidmembershipspro.com/add-ons/pmpro-member-rss/' ) . '" title="' . esc_attr__( 'View Documentation', 'pmpro-member-rss' ) . '">' . __( 'Docs', 'pmpro-member-rss' ) . '</a>',
-			'<a href="' . esc_url( 'https://www.paidmembershipspro.com/support/' ) . '" title="' . esc_attr__( 'Visit Customer Support Forum', 'pmpro-member-rss' ) . '">' . __( 'Support', 'pmpro-member-rss' ) . '</a>',
+			'<a href="' . esc_url( 'https://www.paidmembershipspro.com/add-ons/member-rss/' ) . '" title="' . esc_attr__( 'View Documentation', 'pmpro-member-rss' ) . '">' . esc_html__( 'Docs', 'pmpro-member-rss' ) . '</a>',
+			'<a href="' . esc_url( 'https://www.paidmembershipspro.com/support/' ) . '" title="' . esc_attr__( 'Visit Customer Support Forum', 'pmpro-member-rss' ) . '">' . esc_html__( 'Support', 'pmpro-member-rss' ) . '</a>',
 		);
-		$links     = array_merge( $links, $new_links );
+		$links = array_merge( $links, $new_links );
 	}
 	return $links;
 }
@@ -285,8 +472,6 @@ add_action( 'admin_init', 'pmprorss_memberkeys_profile_regenerate' );
  * @return void
  */
 function pmprorss_after_level_change_generate_key( $level_id, $user_id, $cancel ) {
-
 	pmpromrss_getMemberKey( $user_id );
-
 }
 add_action( 'pmpro_after_change_membership_level', 'pmprorss_after_level_change_generate_key', 10, 3 );
