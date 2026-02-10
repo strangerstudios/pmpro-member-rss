@@ -22,7 +22,7 @@
 /**
  * Load the plugin text domain.
  * 
- * @since TBD
+ * @since 0.4
  *
  * @return void
  */
@@ -129,7 +129,7 @@ add_action( 'init', 'pmprorss_init', 1 );
  * Filter feed queries to use the member key user's access.
  * This ties into the memberkey method and not the basic authentication method.
  * 
- * @since TBD
+ * @since 0.4
  */
 function pmprorss_pre_get_posts( $query ) {
 	global $wpdb, $pmpromrss_user_id;
@@ -174,7 +174,7 @@ add_action( 'pre_get_posts', 'pmprorss_pre_get_posts', 0 );
 /**
  * Check for Basic Auth on Feed Requests Without Member Key
  * 
- * @since TBD
+ * @since 0.4
  */
 function pmprorss_basic_auth_challenge() {
 	global $pmpromrss_user_id, $wp_query;
@@ -249,7 +249,7 @@ add_action( 'template_redirect', 'pmprorss_basic_auth_challenge' );
 /**
  * Enable Application Password authentication for Feed Requests.
  * 
- * @since TBD
+ * @since 0.4
  * 
  * @param boolean $is_api_request Is this an API request, we can spoof this to enable it for our requests.
  * @return $boolean True if we're trying to authenticate a feed request, otherwise return the original value.
@@ -267,7 +267,7 @@ add_filter( 'application_password_is_api_request', 'pmprorss_allow_application_p
 /**
  * Get the authorization headers from the request for various servers.
  * 
- * @since TBD
+ * @since 0.4
  * @return array Array containing 'username' and 'password' keys.  
  */
 function pmprorss_get_auth_credentials() {
