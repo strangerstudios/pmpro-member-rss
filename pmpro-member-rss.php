@@ -105,7 +105,8 @@ add_action('pmpro_member_links_bottom', 'pmpromrss_pmpro_member_links_bottom');
 
 /**
  * Check for Member Key and Disable Content Filter in RSS Feed Items
- *
+ * Get the user ID from the member key and store it in a global variable for use in other filters.
+ * 
  * @since 0.1
  */
 function pmprorss_init() {
@@ -120,19 +121,45 @@ function pmprorss_init() {
 			)
 		);
 	}
+
 }
 add_action( 'init', 'pmprorss_init', 1 );
 
 /**
  * Filter feed queries to use the member key user's access.
+ * This ties into the memberkey method and not the basic authentication method.
  * 
  * @since TBD
  */
 function pmprorss_pre_get_posts( $query ) {
-	global $pmpromrss_user_id;
+	global $wpdb, $pmpromrss_user_id;
+
+	// This method is only for the member key method, 
+	// it's okay to have no member key for basic auth method since we'll handle that in the template_redirect action.
+	if ( empty( $_REQUEST['memberkey'] ) ) {
+		return;
+	}
+
+	// They're a spammer, slow down!
+	if ( function_exists( 'pmpro_is_spammer' ) && pmpro_is_spammer() ) {
+		status_header( 403 );
+		header( 'Content-Type: text/plain; charset=' . get_bloginfo( 'charset' ) );
+		esc_html_e( 'Slow down. Access denied. Please try again later.', 'pmpro-member-rss' );
+		exit;
+	}
+
+
+	// If the user ID is empty/0, user hasn't been authenticated.
+	if ( empty( $pmpromrss_user_id ) ) {
+		pmpro_track_spam_activity(); // Someone trying a phony memberkey possibly, let's slow them down.
+		status_header( 403 );
+		header( 'Content-Type: text/plain; charset=' . get_bloginfo( 'charset' ) );
+		esc_html_e( 'Access denied. Please check your memberkey is correctly entered or reach out to the site administrator for assistance.', 'pmpro-member-rss' );
+		exit;
+	}
 
 	// Only filter feed queries with a valid member key.
-	if ( empty( $pmpromrss_user_id ) || ! $query->is_feed() ) {
+	if ( ! $query->is_feed() ) {
 		return;
 	}
 
@@ -298,6 +325,8 @@ function pmprorss_search_filter( $query ) {
 	$query = pmpro_search_filter( $query );
 
 	$current_user = $current_user_backup;
+
+	return $query;
 }
 
 /**
@@ -313,8 +342,8 @@ function pmprorss_search_filter( $query ) {
  */
 function pmpromrss_pmpro_has_membership_access_filter( $hasaccess, $mypost, $myuser, $post_membership_levels ) {
 	global $pmpromrss_user_id, $wp_query;		
-	
-	if( empty( $pmpromrss_user_id ) ) {
+		
+	if ( empty( $pmpromrss_user_id ) ) {
 		return $hasaccess;
 	}	
 	
