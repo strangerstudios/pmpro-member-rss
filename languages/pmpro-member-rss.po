@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Paid Memberships Pro - Member RSS Add On 0.3\n"
+"Project-Id-Version: Paid Memberships Pro - Member RSS Add On 0.4\n"
 "Report-Msgid-Bugs-To: info@paidmembershipspro.com\n"
 "Last-Translator: Paid Memberships Pro <info@paidmembershipspro.com>\n"
 "Language-Team: Paid Memberships Pro <info@paidmembershipspro.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-02-06T11:04:51+00:00\n"
+"POT-Creation-Date: 2026-02-11T13:18:36+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: pmpro-member-rss\n"
@@ -40,43 +40,55 @@ msgid "http://www.strangerstudios.com"
 msgstr ""
 
 #: pmpro-member-rss.php:174
+#: includes/functions.php:173
 msgid "Paid Memberships Pro not activated. Please ensure you have it installed and activated."
 msgstr ""
 
 #: pmpro-member-rss.php:182
+#: includes/functions.php:111
+#: includes/functions.php:181
 msgid "Slow down. Access denied. Please try again later."
 msgstr ""
 
 #: pmpro-member-rss.php:194
+#: includes/functions.php:193
 msgid "Authentication required. Please provide your WordPress username and application password."
 msgstr ""
 
 #: pmpro-member-rss.php:206
+#: includes/functions.php:205
 msgid "Access denied. Invalid username or application password."
 msgstr ""
 
+#. Translators: %s is the permalink to the member content.
 #: pmpro-member-rss.php:381
+#: includes/functions.php:384
 #, php-format
 msgid "Please visit %s to access this member content."
 msgstr ""
 
 #: pmpro-member-rss.php:395
+#: pmpro-member-rss.php:50
 msgid "View Documentation"
 msgstr ""
 
 #: pmpro-member-rss.php:395
+#: pmpro-member-rss.php:50
 msgid "Docs"
 msgstr ""
 
 #: pmpro-member-rss.php:396
+#: pmpro-member-rss.php:51
 msgid "Visit Customer Support Forum"
 msgstr ""
 
 #: pmpro-member-rss.php:396
+#: pmpro-member-rss.php:51
 msgid "Support"
 msgstr ""
 
 #: pmpro-member-rss.php:422
+#: classes/class-pmpromrss-member-edit-panel.php:8
 msgid "Member RSS"
 msgstr ""
 
@@ -85,17 +97,69 @@ msgid "Key"
 msgstr ""
 
 #: pmpro-member-rss.php:429
+#: includes/admin.php:87
 msgid "Are you sure you want to regenerate this user's key?"
 msgstr ""
 
 #: pmpro-member-rss.php:429
+#: includes/admin.php:87
+#: includes/admin.php:120
 msgid "Regenerate Key"
 msgstr ""
 
 #: pmpro-member-rss.php:456
+#: includes/admin.php:163
 msgid "Invalid nonce for regen. Try again."
 msgstr ""
 
 #: pmpro-member-rss.php:473
+#: includes/admin.php:178
 msgid "A new key has been generated."
+msgstr ""
+
+#: includes/admin.php:85
+#: includes/admin.php:114
+msgid "Member RSS Key"
+msgstr ""
+
+#: includes/admin.php:88
+msgid "You may regenerate the member's RSS key at any time. Regenerating it will invalidate the previous key."
+msgstr ""
+
+#: includes/admin.php:118
+msgid "Your RSS Key"
+msgstr ""
+
+#: includes/admin.php:120
+msgid " This will invalidate all currently connected keys. Are you sure you want to regenerate your key?"
+msgstr ""
+
+#. translators: %s is the query parameter to add to the feed URL for basic authentication.
+#: includes/admin.php:128
+#, php-format
+msgid "Note: Basic Authentication is enabled. You can access your member RSS feeds using either your member key or your WordPress username and application password. To authenticate with your application password, append %s to any feed URL and provide your credentials via Basic Authentication."
+msgstr ""
+
+#: includes/admin.php:216
+msgid "Disabled"
+msgstr ""
+
+#: includes/admin.php:217
+msgid "Enabled"
+msgstr ""
+
+#: includes/admin.php:219
+msgid "Enable Basic Authentication"
+msgstr ""
+
+#: includes/admin.php:220
+msgid "Enable this option to allow users to authenticate to their member RSS feeds using Basic Authentication with their WordPress username and application password. This is an alternative to using the member key method for authentication. Note: Basic Authentication will only work for feed requests that include the <codepmpromrss_basic_auth=1</code> query parameter."
+msgstr ""
+
+#: includes/functions.php:121
+msgid "Access denied. Please check your memberkey is correctly entered or reach out to the site administrator for assistance."
+msgstr ""
+
+#: includes/functions.php:165
+msgid "Authentication method not allowed."
 msgstr ""
