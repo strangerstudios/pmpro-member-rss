@@ -121,11 +121,11 @@ function pmpromrss_memberkeys_profile_frontend( $user ) {
 				
 			</div>
 		</div>
-		<?php if ( get_option( 'pmpro_pmpromrss_basic_auth' ) ) : ?>
+		<?php if ( get_option( 'pmpro_pmpromrss_basic_auth' ) === 'Enabled' ) : ?>
 			<div class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_form_field pmpro_form_field-info pmpro_form_field-pmpromrss_basic_auth_info' ) ); ?>">
 				<p class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_form_hint', 'pmpro_form_field-pmpromrss_basic_auth_info' ) ); ?>"><?php
 				// translators: %s is the query parameter to add to the feed URL for basic authentication.  
-				printf( esc_html__( 'Note: Basic Authentication is enabled. You can access your member RSS feeds using either your member key or your WordPress username and application password. To authenticate with your application password, append %s to any feed URL and provide your credentials via Basic Authentication.', 'pmpro-member-rss' ), '?pmpromrss_basic_auth=1' ); 
+				printf( esc_html__( 'Note: Basic Authentication is enabled. You can access your member RSS feeds using either your member key or your WordPress username and application password. To authenticate with your application password, append %s to any feed URL and provide your credentials via Basic Authentication.', 'pmpro-member-rss' ), '<code>?pmpromrss_basic_auth=1</code>' ); 
 				
 				?></p>
 			</div>
@@ -217,7 +217,7 @@ function pmpromrss_advanced_settings( $fields ) {
 			1 => __( 'Enabled', 'pmpro-member-rss' ),
 		),
 		'label' => __( 'Enable Basic Authentication', 'pmpro-member-rss' ),
-		'description' => __( 'Enable this option to allow users to authenticate to their member RSS feeds using Basic Authentication with their WordPress username and application password. This is an alternative to using the member key method for authentication. Note: Basic Authentication will only work for feed requests that include the <codepmpromrss_basic_auth=1</code> query parameter.', 'pmpro-member-rss' ),
+		'description' => __( 'Enable this option to allow users to authenticate to their member RSS feeds using Basic Authentication with their WordPress username and application password. This is an alternative to using the member key method for authentication. Note: Basic Authentication will only work for feed requests that include the pmpromrss_basic_auth=1 query parameter.', 'pmpro-member-rss' ),
 	);
 	
 	return $fields;
