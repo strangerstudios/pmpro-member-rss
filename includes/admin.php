@@ -125,7 +125,7 @@ function pmpromrss_memberkeys_profile_frontend( $user ) {
 			<div class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_form_field pmpro_form_field-info pmpro_form_field-pmpromrss_basic_auth_info' ) ); ?>">
 				<p class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_form_hint', 'pmpro_form_field-pmpromrss_basic_auth_info' ) ); ?>"><?php
 				// translators: %s is the query parameter to add to the feed URL for basic authentication.  
-				printf( esc_html__( 'Note: Basic Authentication is enabled. You can access your member RSS feeds using either your member key or your WordPress username and application password. To authenticate with your application password, append %s to any feed URL and provide your credentials via Basic Authentication.', 'pmpro-member-rss' ), '<code>?pmpromrss_basic_auth=1</code>' ); 
+				printf( esc_html__( 'Note: Basic Authentication is enabled. You can access your member RSS feeds using either your member key or your WordPress username and application password. To authenticate with your application password, append %s to any feed URL and provide your credentials via Basic Authentication.', 'pmpro-member-rss' ), '?pmpromrss_basic_auth=1' ); 
 				
 				?></p>
 			</div>
