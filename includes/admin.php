@@ -104,22 +104,29 @@ function pmpromrss_memberkeys_profile_frontend( $user ) {
 		'_wpnonce' => wp_create_nonce( 'pmpromrss_regenerate' )
 	);
 
-	// Now let's build out a frontend view for the pmpromrss_memberkeys_profile function.
 	?>
 	<div class="pmpro_spacer"></div>
-	<fieldset id="pmpro_form_fieldset-member-rss-key" class="pmpro_form_fieldset">
-		<legend class="pmpro_form_legend">
-			<h2 class="pmpro_form_heading pmpro_font-large"><?php esc_html_e( 'Member RSS Key', 'pmpro-member-rss' ); ?></h2>
+	<fieldset id="pmpro_form_fieldset-member-rss-key" class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_form_fieldset', 'pmpro_form_fieldset-member-rss-key' ) ); ?>">
+		<legend class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_form_legend' ) ); ?>">
+			<h2 class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_form_heading pmpro_font-large' ) ); ?>"><?php esc_html_e( 'Member RSS Key', 'pmpro-member-rss' ); ?></h2>
 		</legend>
 		<div class="pmpro_form_fields">
-			<div id="pmpromrss_key_div" class="pmpro_form_field pmpro_form_field-text pmpro_form_field-pmpromrss_key">
+			<div id="pmpromrss_key_div" class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_form_field pmpro_form_field-text pmpro_form_field-pmpromrss_key', 'pmpromrss_key_div' ) ); ?>">
 				<label class="pmpro_form_label" for="pmpromrss_profile_key"><?php esc_html_e( 'Your RSS Key', 'pmpro-member-rss' ); ?></label>
-				<input type="text" name="pmpromrss_profile_key" id="pmpromrss_profile_key" readonly="readonly" value="<?php echo esc_attr( pmpromrss_getMemberKey( $user->ID ) ); ?>" class="pmpro_form_input pmpro_form_input-text pmpro_form_input-pmpromrss_profile_key regular-text" />
-				<a href="<?php echo esc_attr( "javascript:if(confirm('" . esc_js( __( "Are you sure you want to regenerate this user's key?", 'pmpro-member-rss' ) ) . "')){window.location.href='" . esc_url( add_query_arg( $args ) ) . "';}" ); ?>"><?php esc_html_e( 'Regenerate Key', 'pmpro-member-rss' ); ?></a>
-				<small><?php esc_html_e( 'You may regenerate your RSS key at any time. Regenerating it will invalidate the previous key.', 'pmpro-member-rss' ); ?></small>
-
+				<input type="text" name="pmpromrss_profile_key" id="pmpromrss_profile_key" readonly="readonly" value="<?php echo esc_attr( pmpromrss_getMemberKey( $user->ID ) ); ?>" class="<?php echo esc_attr( 'pmpro_form_input pmpro_form_input-text pmpro_form_input-pmpromrss_profile_key regular-text' ); ?>" />
+				<a class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_btn', 'pmpromrss_profile_key' ) ); ?>" href="<?php echo esc_attr( "javascript:if(confirm('" . esc_js( __( " This will invalidate all currently connected keys. Are you sure you want to regenerate your key?", 'pmpro-member-rss' ) ) . "')){window.location.href='" . esc_url( add_query_arg( $args ) ) . "';}" ); ?>"><?php esc_html_e( 'Regenerate Key', 'pmpro-member-rss' ); ?></a>
+				
 			</div>
 		</div>
+		<?php if ( get_option( 'pmpro_pmpromrss_basic_auth' ) ) : ?>
+			<div class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_form_field pmpro_form_field-info pmpro_form_field-pmpromrss_basic_auth_info' ) ); ?>">
+				<p class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_form_hint', 'pmpro_form_field-pmpromrss_basic_auth_info' ) ); ?>"><?php
+				// translators: %s is the query parameter to add to the feed URL for basic authentication.  
+				printf( esc_html__( 'Note: Basic Authentication is enabled. You can access your member RSS feeds using either your member key or your WordPress username and application password. To authenticate with your application password, append %s to any feed URL and provide your credentials via Basic Authentication.', 'pmpro-member-rss' ), '<code>?pmpromrss_basic_auth=1</code>' ); 
+				
+				?></p>
+			</div>
+		<?php endif; ?>
 	</fieldset>
 	<?php
 }
