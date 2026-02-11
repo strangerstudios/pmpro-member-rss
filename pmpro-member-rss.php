@@ -18,6 +18,7 @@
 	
 	To add more RSS URLs, use the pmpromrss_feeds filter.
 */
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 define( 'PMPROMRSS_VERSION', '0.3' );
 define( 'PMPROMRSS_DIR', dirname( __FILE__ ) );

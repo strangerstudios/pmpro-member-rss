@@ -1,5 +1,6 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 /**
  * Check for Member Key and Disable Content Filter in RSS Feed Items
@@ -379,7 +380,7 @@ function pmpromrss_pmpro_rss_text_filter( $text ) {
 	global $post;
 	
 	$text = sprintf( 
-		/** Translators: %s is the permalink to the member content. */
+		/* Translators: %s is the permalink to the member content. */
 		esc_html__( 'Please visit %s to access this member content.', 'pmpro-member-rss' ), esc_url( get_permalink( $post->ID ) ) 
 		);
 	
