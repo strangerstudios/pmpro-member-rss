@@ -3,7 +3,7 @@
  * Plugin Name: Paid Memberships Pro - Member RSS Add On
  * Plugin URI: http://www.paidmembershipspro.com/wp/pmpro-member-rss/
  * Description: Create Member-Specific RSS Feeds for Paid Memberships Pro
- * Version: 0.3
+ * Version: 0.4
  * Author: Stranger Studios
  * Author URI: http://www.strangerstudios.com
  * Text Domain: pmpro-member-rss
@@ -20,7 +20,7 @@
 */
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-define( 'PMPROMRSS_VERSION', '0.3' );
+define( 'PMPROMRSS_VERSION', '0.4' );
 define( 'PMPROMRSS_DIR', dirname( __FILE__ ) );
 
 require_once( PMPROMRSS_DIR . '/includes/functions.php' );
@@ -29,7 +29,7 @@ require_once( PMPROMRSS_DIR . '/includes/admin.php' );
 /**
  * Load the plugin text domain.
  * 
- * @since TBD
+ * @since 0.4
  *
  * @return void
  */

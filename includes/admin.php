@@ -28,7 +28,7 @@ function pmpromrss_pmpro_member_edit_panels( $panels ) {
 /**
  * Hook the correct function for admins editing a member's profile.
  *
- * @since TBD
+ * @since 0.4
  */
 function pmpromrss_hook_edit_member_profile() {
 	// If the `pmpro_member_edit_get_panels()` function exists, add a panel.
@@ -96,7 +96,7 @@ function pmpromrss_memberkeys_profile( $user ) {
 /**
  * Display the fields on the frontend profile page (Membership Account > Edit Profile)
  * 
- * @since TBD
+ * @since 0.4
  *
  * @return void
  */
@@ -201,7 +201,7 @@ add_action( 'admin_init', 'pmpromrss_memberkeys_profile_regenerate' ); // Needed
 /**
  * Add an option to allow basic authentication functionality.
  *
- * @since TBD
+ * @since 0.4
  * 
  * @param array $fields 
  * @return array $fields The modified fields array with the Google Maps API key setting added.
