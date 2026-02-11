@@ -159,7 +159,7 @@ function pmpromrss_basic_auth_challenge() {
 	}
 
 	// The option is disabled, bail.
-	if ( ! get_option( 'pmpro_pmpromrss_basic_auth' ) ) {
+	if ( get_option( 'pmpro_pmpromrss_basic_auth' ) === 'Disabled' ) {
 		status_header( 403 );
 		header( 'Content-Type: text/plain; charset=' . get_bloginfo( 'charset' ) );
 		esc_html_e( 'Authentication method not allowed.', 'pmpro-member-rss' );
@@ -228,7 +228,7 @@ add_action( 'template_redirect', 'pmpromrss_basic_auth_challenge' );
  */
 function pmpromrss_allow_application_passwords( $is_api_request ) {
 	// Treat our feed request as an "API request" so application passwords are allowed.
-	if ( ! empty( $_GET['pmpromrss_basic_auth'] ) && get_option( 'pmpro_pmpromrss_basic_auth' ) ) {
+	if ( ! empty( $_GET['pmpromrss_basic_auth'] ) && get_option( 'pmpro_pmpromrss_basic_auth' ) === 'Enabled' ) {
 		return true;
 	}
 	return $is_api_request;
