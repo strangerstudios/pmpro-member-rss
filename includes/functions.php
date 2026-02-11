@@ -228,7 +228,7 @@ add_action( 'template_redirect', 'pmpromrss_basic_auth_challenge' );
  */
 function pmpromrss_allow_application_passwords( $is_api_request ) {
 	// Treat our feed request as an "API request" so application passwords are allowed.
-	if ( ! empty( $_GET['pmpromrss_basic_auth'] ) && get_option( 'pmpro_pmpromrss_basic_auth' ) === 'Enabled' ) {
+	if ( ! empty( $_GET['pmpromrss_basic_auth'] ) ) {
 		return true;
 	}
 	return $is_api_request;
