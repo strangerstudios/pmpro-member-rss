@@ -98,6 +98,11 @@ function pmpromrss_url( $url, $user_id = NULL ) {
 function pmpromrss_pre_get_posts( $query ) {
 	global $wpdb, $pmpromrss_user_id;
 
+	// Only filter feed queries with a valid member key.
+	if ( ! $query->is_feed() ) {
+		return;
+	}
+
 	// This method is only for the member key method, 
 	// it's okay to have no member key for basic auth method since we'll handle that in the template_redirect action.
 	if ( empty( $_REQUEST['memberkey'] ) ) {
@@ -122,10 +127,7 @@ function pmpromrss_pre_get_posts( $query ) {
 		exit;
 	}
 
-	// Only filter feed queries with a valid member key.
-	if ( ! $query->is_feed() ) {
-		return;
-	}
+	wp_set_current_user( absint( $pmpromrss_user_id ) );
 
 	// Remove PMPro's search filter for this feed query and add ours.
 	if ( has_filter( 'pre_get_posts', 'pmpro_search_filter' ) ) {
