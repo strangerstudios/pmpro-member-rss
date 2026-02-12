@@ -48,7 +48,7 @@ Please post it in the issues section of GitHub and we'll fix it as soon as we ca
 Please visit our premium support site at http://www.paidmembershipspro.com for more documentation and our support forums.
 
 == Changelog ==
-= 0.4 - 2026-02-11 =
+= 0.4 - 2026-02-12 =
 * FEATURE: Added in logic that you may pass basic header authentication to access the feed. Please use Application Passwords for authentication and not your main password. This is a more secure way to allow access to the feed without sharing your memberkey.
 * ENHANCEMENT: Ensure the Add On is translation ready and added to translate.strangerstudios.com server.
 * ENHANCEMENT: Added better support for Paid Memberships Pro 3.0+, includes adding the option to the Edit Member Profile Page as well as the Edit Member Panel.
