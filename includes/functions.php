@@ -12,6 +12,11 @@ function pmpromrss_init() {
 	global $wpdb, $pmpromrss_user_id;
 
 	if ( ! empty( $_REQUEST['memberkey'] ) ) {
+		// If URL memberkey auth is disabled, don't process it.
+		if ( get_option( 'pmpro_pmpromrss_disable_url_key' ) === 'Enabled' ) {
+			return;
+		}
+
 		$key = preg_replace( '/[^0-9a-f]/', '', $_REQUEST['memberkey'] );
 		
 		// Try to get user_id from cache first
@@ -85,6 +90,10 @@ function pmpromrss_getMemberKey( $user_id = NULL ) {
  * @return string URL with member key added as a query parameter.
  */
 function pmpromrss_url( $url, $user_id = NULL ) {
+	// If "Disable Memberkey in URL" is active, never append the key.
+	if ( get_option( 'pmpro_pmpromrss_disable_url_key' ) === 'Enabled' ) {
+		return $url;
+	}
 	$key = pmpromrss_getMemberKey( $user_id );
 	return add_query_arg( "memberkey", $key, $url );
 }
@@ -103,10 +112,18 @@ function pmpromrss_pre_get_posts( $query ) {
 		return;
 	}
 
-	// This method is only for the member key method, 
+	// This method is only for the member key method,
 	// it's okay to have no member key for basic auth method since we'll handle that in the template_redirect action.
 	if ( empty( $_REQUEST['memberkey'] ) ) {
 		return;
+	}
+
+	// If URL memberkey auth is disabled, reject with 403.
+	if ( get_option( 'pmpro_pmpromrss_disable_url_key' ) === 'Enabled' ) {
+		status_header( 403 );
+		header( 'Content-Type: text/plain; charset=' . get_bloginfo( 'charset' ) );
+		esc_html_e( 'Memberkey URL authentication is disabled. Please use Basic Authentication instead.', 'pmpro-member-rss' );
+		exit;
 	}
 
 	// They're a spammer, slow down!
@@ -199,6 +216,11 @@ function pmpromrss_basic_auth_challenge() {
 	// Only use application passwords for authentication, not regular passwords.
 	$user = wp_authenticate_application_password( null, $username, $password );
 
+	// If application password auth failed, try memberkey-as-password fallback.
+	if ( is_wp_error( $user ) && get_option( 'pmpro_pmpromrss_memberkey_as_password' ) === 'Enabled' ) {
+		$user = pmpromrss_authenticate_memberkey_password( $password );
+	}
+
 	// There was an error authenticating the user.
 	if ( is_wp_error( $user ) ) {
 		pmpro_track_spam_activity(); // Count the activity here as well for failed logins.
@@ -284,6 +306,43 @@ function pmpromrss_get_auth_credentials() {
 		'username' => $username,
 		'password' => $password,
 	);
+}
+
+/**
+ * Authenticate a user by matching the Basic Auth password against their memberkey.
+ * The username is ignored — only the password (memberkey) is checked.
+ *
+ * @since 0.5
+ *
+ * @param string $password The password provided via Basic Auth.
+ * @return WP_User|WP_Error User object on success, WP_Error on failure.
+ */
+function pmpromrss_authenticate_memberkey_password( $password ) {
+	global $wpdb;
+
+	// Sanitize: memberkeys are hex strings.
+	$key = preg_replace( '/[^0-9a-f]/', '', $password );
+	if ( empty( $key ) || $key !== $password ) {
+		return new WP_Error( 'pmpromrss_invalid_key', __( 'Invalid member key.', 'pmpro-member-rss' ) );
+	}
+
+	$user_id = $wpdb->get_var(
+		$wpdb->prepare(
+			"SELECT user_id FROM $wpdb->usermeta WHERE meta_key = 'pmpromrss_key' AND meta_value = %s LIMIT 1",
+			$key
+		)
+	);
+
+	if ( empty( $user_id ) ) {
+		return new WP_Error( 'pmpromrss_invalid_key', __( 'Invalid member key.', 'pmpro-member-rss' ) );
+	}
+
+	$user = get_userdata( $user_id );
+	if ( ! $user ) {
+		return new WP_Error( 'pmpromrss_invalid_key', __( 'Invalid member key.', 'pmpro-member-rss' ) );
+	}
+
+	return $user;
 }
 
 /**
