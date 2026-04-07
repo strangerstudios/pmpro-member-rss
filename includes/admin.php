@@ -121,7 +121,18 @@ function pmpromrss_render_frontend_feed_authentication( $user_id, $regen_args ) 
 						<input type="text" id="pmpromrss_profile_key" readonly="readonly" value="<?php echo esc_attr( pmpromrss_getMemberKey( $user_id ) ); ?>" class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_form_input pmpro_form_input-text pmpro_form_input-pmpromrss_key' ) ); ?>" onclick="this.select();" />
 						<p class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_form_hint' ) ); ?>">
 							<?php if ( ! $disable_url_key ) : ?>
-								<?php esc_html_e( 'Your RSS key is embedded in the feed URLs above.', 'pmpro-member-rss' ); ?>
+								<?php $feeds_page_id = pmpromrss_get_feeds_page_id(); ?>
+								<?php if ( ! empty( $feeds_page_id ) && is_page( $feeds_page_id ) ) : ?>
+									<?php esc_html_e( 'Your RSS key is embedded in the feed URLs above.', 'pmpro-member-rss' ); ?>
+								<?php else : ?>
+									<?php
+										printf(
+											/* translators: %s is the memberkey query parameter shown as inline code */
+											esc_html__( 'Add %s to the feed URLs to authenticate.', 'pmpro-member-rss' ),
+											'<code>?memberkey=' . esc_html( pmpromrss_getMemberKey( $user_id ) ) . '</code>'
+										);
+									?>
+								<?php endif; ?>
 							<?php endif; ?>
 
 							<?php if ( $basic_auth_enabled && $memberkey_as_password ) : ?>
