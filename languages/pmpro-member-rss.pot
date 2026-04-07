@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Paid Memberships Pro - Member RSS Add On 0.4\n"
+"Project-Id-Version: Paid Memberships Pro - Member RSS Add On 0.5\n"
 "Report-Msgid-Bugs-To: info@paidmembershipspro.com\n"
 "Last-Translator: Paid Memberships Pro <info@paidmembershipspro.com>\n"
 "Language-Team: Paid Memberships Pro <info@paidmembershipspro.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-02-11T13:18:36+00:00\n"
+"POT-Creation-Date: 2026-04-07T14:23:00+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: pmpro-member-rss\n"
@@ -43,89 +43,206 @@ msgstr ""
 msgid "Member RSS"
 msgstr ""
 
-#: includes/admin.php:85
-#: includes/admin.php:114
-msgid "Member RSS Key"
+#: includes/admin.php:103
+msgid "Feed Authentication"
 msgstr ""
 
-#: includes/admin.php:87
-msgid "Are you sure you want to regenerate this user's key?"
+#. translators: %s is a link to the WP admin profile page
+#: includes/admin.php:110
+#, php-format
+msgid "To access these feeds, you need a WordPress Application Password. %s to create one, then use your WordPress username and the application password in your RSS reader."
 msgstr ""
 
-#: includes/admin.php:87
+#: includes/admin.php:111
+msgid "Visit your profile"
+msgstr ""
+
+#: includes/admin.php:115
+msgid "Contact the site administrator to receive your RSS feed authentication credentials."
+msgstr ""
+
 #: includes/admin.php:120
-msgid "Regenerate Key"
-msgstr ""
-
-#: includes/admin.php:88
-msgid "You may regenerate the member's RSS key at any time. Regenerating it will invalidate the previous key."
-msgstr ""
-
-#: includes/admin.php:118
 msgid "Your RSS Key"
 msgstr ""
 
-#: includes/admin.php:120
-msgid " This will invalidate all currently connected keys. Are you sure you want to regenerate your key?"
+#: includes/admin.php:126
+msgid "Your RSS key is embedded in the feed URLs above."
 msgstr ""
 
-#. translators: %s is the query parameter to add to the feed URL for basic authentication.
-#: includes/admin.php:128
+#. translators: %s is the memberkey query parameter shown as inline code
+#: includes/admin.php:131
 #, php-format
-msgid "Note: Basic Authentication is enabled. You can access your member RSS feeds using either your member key or your WordPress username and application password. To authenticate with your application password, append %s to any feed URL and provide your credentials via Basic Authentication."
+msgid "Add %s to the feed URLs to authenticate."
 msgstr ""
 
-#: includes/admin.php:163
+#: includes/admin.php:139
+msgid "Use your username and this RSS key as the password when authenticating with Basic Auth."
+msgstr ""
+
+#: includes/admin.php:142
+msgid "You can regenerate your key at any time. Regenerating it will invalidate the previous key."
+msgstr ""
+
+#: includes/admin.php:149
+msgid "Regenerating your key will immediately break any RSS readers currently using the key-based URL. You'll need to update those readers with your new feed URL. Continue?"
+msgstr ""
+
+#: includes/admin.php:150
+#: includes/admin.php:245
+msgid "Regenerate Key"
+msgstr ""
+
+#: includes/admin.php:183
+#: includes/admin.php:398
+msgid "A new RSS key has been generated. Update any RSS readers that were using the old feed URL."
+msgstr ""
+
+#: includes/admin.php:185
+#: includes/admin.php:400
+msgid "Invalid request. Please try again."
+msgstr ""
+
+#: includes/admin.php:187
+#: includes/admin.php:402
+msgid "You do not have permission to regenerate this key."
+msgstr ""
+
+#: includes/admin.php:205
+#: includes/admin.php:350
+msgid "Member RSS Feeds"
+msgstr ""
+
+#: includes/admin.php:243
+msgid "Member RSS Key"
+msgstr ""
+
+#: includes/admin.php:245
+msgid "Are you sure you want to regenerate this user's key?"
+msgstr ""
+
+#: includes/admin.php:246
+msgid "You may regenerate the member's RSS key at any time. Regenerating it will invalidate the previous key."
+msgstr ""
+
+#: includes/admin.php:268
 msgid "Invalid nonce for regen. Try again."
 msgstr ""
 
-#: includes/admin.php:178
+#: includes/admin.php:284
 msgid "A new key has been generated."
 msgstr ""
 
-#: includes/admin.php:216
-msgid "Disabled"
+#: includes/admin.php:305
+msgid "No - members use the memberkey URL to access their feeds (default)"
 msgstr ""
 
-#: includes/admin.php:217
-msgid "Enabled"
+#: includes/admin.php:306
+msgid "Yes - allow members to authenticate using HTTP Basic Authentication"
 msgstr ""
 
-#: includes/admin.php:219
-msgid "Enable Basic Authentication"
+#: includes/admin.php:308
+msgid "Enable Basic Auth for RSS Feeds"
 msgstr ""
 
-#: includes/admin.php:220
-msgid "Enable this option to allow users to authenticate to their member RSS feeds using Basic Authentication with their WordPress username and application password. This is an alternative to using the member key method for authentication. Note: Basic Authentication will only work for feed requests that include the <codepmpromrss_basic_auth=1</code> query parameter."
+#: includes/admin.php:309
+#, php-format
+msgid "Allow members to authenticate their RSS reader when the %s parameter is set."
 msgstr ""
 
-#: includes/functions.php:111
-#: includes/functions.php:181
+#: includes/admin.php:317
+msgid "No - members must use a WordPress Application Password (default)"
+msgstr ""
+
+#: includes/admin.php:318
+msgid "Yes - allow members to use their member RSS key as the Basic Auth password"
+msgstr ""
+
+#: includes/admin.php:320
+msgid "Allow memberkey as Basic Auth Password"
+msgstr ""
+
+#: includes/admin.php:321
+#, php-format
+msgid "When enabled, members can enter their username and member RSS key (%s) as the Basic Auth password"
+msgstr ""
+
+#: includes/admin.php:329
+msgid "No - allow feed access via the memberkey in URL (default)"
+msgstr ""
+
+#: includes/admin.php:330
+msgid "Yes - require Basic Auth for all feed access"
+msgstr ""
+
+#: includes/admin.php:332
+msgid "Disable memberkey in URL"
+msgstr ""
+
+#: includes/admin.php:333
+msgid "When enabled, members must use Basic Authentication to access their RSS feeds. The memberkey URL parameter will no longer work. Requires \"Enable Basic Auth for RSS Feeds\" to be enabled."
+msgstr ""
+
+#: includes/admin.php:352
+msgid "Include the [pmpro_member_rss] shortcode."
+msgstr ""
+
+#: includes/admin.php:384
+msgid "You must be logged in to view your RSS feeds."
+msgstr ""
+
+#: includes/admin.php:391
+msgid "You must have an active membership to access RSS feeds."
+msgstr ""
+
+#: includes/admin.php:405
+msgid "Recent Posts Feed"
+msgstr ""
+
+#: includes/admin.php:422
+msgid "Your RSS Feeds"
+msgstr ""
+
+#: includes/admin.php:425
+msgid "Copy a feed URL into your RSS reader to access your member content."
+msgstr ""
+
+#: includes/admin.php:445
+msgid "View Your Membership Account &rarr;"
+msgstr ""
+
+#: includes/functions.php:135
+msgid "Memberkey URL authentication is disabled. Please use Basic Authentication instead."
+msgstr ""
+
+#: includes/functions.php:143
+#: includes/functions.php:258
 msgid "Slow down. Access denied. Please try again later."
 msgstr ""
 
-#: includes/functions.php:121
-msgid "Access denied. Please check your memberkey is correctly entered or reach out to the site administrator for assistance."
+#: includes/functions.php:154
+#: includes/functions.php:294
+msgid "Access denied. Please check your authentication credentials or reach out to the site administrator for assistance."
 msgstr ""
 
-#: includes/functions.php:165
+#: includes/functions.php:242
 msgid "Authentication method not allowed."
 msgstr ""
 
-#: includes/functions.php:173
+#: includes/functions.php:250
 msgid "Paid Memberships Pro not activated. Please ensure you have it installed and activated."
 msgstr ""
 
-#: includes/functions.php:193
+#: includes/functions.php:273
 msgid "Authentication required. Please provide your WordPress username and application password."
 msgstr ""
 
-#: includes/functions.php:205
-msgid "Access denied. Invalid username or application password."
+#: includes/functions.php:382
+#: includes/functions.php:387
+msgid "Invalid username or member key."
 msgstr ""
 
 #. Translators: %s is the permalink to the member content.
-#: includes/functions.php:384
+#: includes/functions.php:490
 #, php-format
 msgid "Please visit %s to access this member content."
 msgstr ""
