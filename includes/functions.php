@@ -12,6 +12,11 @@ function pmpromrss_init() {
 	global $wpdb, $pmpromrss_user_id;
 
 	if ( ! empty( $_REQUEST['memberkey'] ) ) {
+		// If URL memberkey auth is disabled, don't process it.
+		if ( get_option( 'pmpro_pmpromrss_disable_url_key' ) === 'Enabled' ) {
+			return;
+		}
+
 		$key = preg_replace( '/[^0-9a-f]/', '', $_REQUEST['memberkey'] );
 		
 		// Try to get user_id from cache first
@@ -85,14 +90,31 @@ function pmpromrss_getMemberKey( $user_id = NULL ) {
  * @return string URL with member key added as a query parameter.
  */
 function pmpromrss_url( $url, $user_id = NULL ) {
+	// Only switch to Basic Auth URL when the memberkey URL method is explicitly disabled.
+	if ( get_option( 'pmpro_pmpromrss_disable_url_key' ) === 'Enabled' ) {
+		return add_query_arg( 'pmpromrss_basic_auth', '1', $url );
+	}
+
 	$key = pmpromrss_getMemberKey( $user_id );
-	return add_query_arg( "memberkey", $key, $url );
+	return add_query_arg( 'memberkey', $key, $url );
+}
+
+/**
+ * Whether PMPro spam protection is active and the required functions are available.
+ *
+ * @since 0.5
+ * @return bool
+ */
+function pmpromrss_spam_protection_enabled() {
+	return ! empty( get_option( 'pmpro_spamprotection' ) )
+		&& function_exists( 'pmpro_is_spammer' )
+		&& function_exists( 'pmpro_track_spam_activity' );
 }
 
 /**
  * Filter feed queries to use the member key user's access.
  * This ties into the memberkey method and not the basic authentication method.
- * 
+ *
  * @since 0.4
  */
 function pmpromrss_pre_get_posts( $query ) {
@@ -103,31 +125,84 @@ function pmpromrss_pre_get_posts( $query ) {
 		return;
 	}
 
-	// This method is only for the member key method, 
-	// it's okay to have no member key for basic auth method since we'll handle that in the template_redirect action.
-	if ( empty( $_REQUEST['memberkey'] ) ) {
-		return;
+	if ( ! empty( $_REQUEST['memberkey'] ) ) {
+		// Memberkey method.
+
+	// If URL memberkey auth is disabled, reject with 403.
+	if ( get_option( 'pmpro_pmpromrss_disable_url_key' ) === 'Enabled' ) {
+		status_header( 403 );
+		header( 'Content-Type: text/plain; charset=' . get_bloginfo( 'charset' ) );
+		esc_html_e( 'Memberkey URL authentication is disabled. Please use Basic Authentication instead.', 'pmpro-member-rss' );
+		exit;
 	}
 
 	// They're a spammer, slow down!
-	if ( function_exists( 'pmpro_is_spammer' ) && pmpro_is_spammer() ) {
+	if ( pmpromrss_spam_protection_enabled() && pmpro_is_spammer() ) {
 		status_header( 403 );
 		header( 'Content-Type: text/plain; charset=' . get_bloginfo( 'charset' ) );
 		esc_html_e( 'Slow down. Access denied. Please try again later.', 'pmpro-member-rss' );
 		exit;
 	}
 
+		// If the user ID is empty/0, user hasn't been authenticated.
+		if ( empty( $pmpromrss_user_id ) ) {
+			if ( pmpromrss_spam_protection_enabled() ) {
+				pmpro_track_spam_activity(); // Someone trying a phony memberkey possibly, let's slow them down.
+			}
+			status_header( 403 );
+			header( 'Content-Type: text/plain; charset=' . get_bloginfo( 'charset' ) );
+			esc_html_e( 'Access denied. Please check your authentication credentials or reach out to the site administrator for assistance.', 'pmpro-member-rss' );
+			exit;
+		}
 
-	// If the user ID is empty/0, user hasn't been authenticated.
-	if ( empty( $pmpromrss_user_id ) ) {
-		pmpro_track_spam_activity(); // Someone trying a phony memberkey possibly, let's slow them down.
-		status_header( 403 );
-		header( 'Content-Type: text/plain; charset=' . get_bloginfo( 'charset' ) );
-		esc_html_e( 'Access denied. Please check your memberkey is correctly entered or reach out to the site administrator for assistance.', 'pmpro-member-rss' );
-		exit;
+		wp_set_current_user( absint( $pmpromrss_user_id ) );
+
+	} elseif ( ! empty( $_GET['pmpromrss_basic_auth'] ) ) {
+		// Basic auth method — authenticate early so the filter swap happens before the query runs.
+		// template_redirect will still handle issuing the 401/403 responses when auth fails.
+
+		if ( get_option( 'pmpro_pmpromrss_basic_auth' ) !== 'Enabled' ) {
+			return;
+		}
+
+		if ( ! defined( 'PMPRO_VERSION' ) ) {
+			return;
+		}
+
+		if ( pmpromrss_spam_protection_enabled() && pmpro_is_spammer() ) {
+			return;
+		}
+
+		// If already resolved (e.g. from a prior hook), just set the user.
+		if ( ! empty( $pmpromrss_user_id ) ) {
+			wp_set_current_user( absint( $pmpromrss_user_id ) );
+		} else {
+			$credentials = pmpromrss_get_auth_credentials();
+			$username     = $credentials['username'];
+			$password     = $credentials['password'];
+
+			// No credentials yet — template_redirect will issue the 401 challenge.
+			if ( empty( $username ) || empty( $password ) ) {
+				return;
+			}
+
+			$user = wp_authenticate_application_password( null, $username, $password );
+
+			if ( ! ( $user instanceof WP_User ) && get_option( 'pmpro_pmpromrss_memberkey_as_password' ) === 'Enabled' ) {
+				$user = pmpromrss_authenticate_memberkey_password( $username, $password );
+			}
+
+			// Auth failed — template_redirect will issue the 403 response.
+			if ( ! ( $user instanceof WP_User ) ) {
+				return;
+			}
+
+			$pmpromrss_user_id = $user->ID;
+			wp_set_current_user( absint( $pmpromrss_user_id ) );
+		}
+	} else {
+		return;
 	}
-
-	wp_set_current_user( absint( $pmpromrss_user_id ) );
 
 	// Remove PMPro's search filter for this feed query and add ours.
 	if ( has_filter( 'pre_get_posts', 'pmpro_search_filter' ) ) {
@@ -143,14 +218,14 @@ add_action( 'pre_get_posts', 'pmpromrss_pre_get_posts', 0 );
  * @since 0.4
  */
 function pmpromrss_basic_auth_challenge() {
-	global $pmpromrss_user_id, $wp_query;
+	global $pmpromrss_user_id;
 
 	// Only proceed if this is a feed request
 	if ( ! is_feed() ) {
 		return;
 	}
 
-	// If we already have a valid member key, don't challenge for Basic Auth
+	// If already authenticated (memberkey or early basic auth in pre_get_posts), nothing to do.
 	if ( ! empty( $pmpromrss_user_id ) ) {
 		return;
 	}
@@ -160,8 +235,8 @@ function pmpromrss_basic_auth_challenge() {
 		return;
 	}
 
-	// The option is disabled, bail.
-	if ( get_option( 'pmpro_pmpromrss_basic_auth' ) === 'Disabled' ) {
+	// The option is not enabled, bail.
+	if ( get_option( 'pmpro_pmpromrss_basic_auth' ) !== 'Enabled' ) {
 		status_header( 403 );
 		header( 'Content-Type: text/plain; charset=' . get_bloginfo( 'charset' ) );
 		esc_html_e( 'Authentication method not allowed.', 'pmpro-member-rss' );
@@ -169,7 +244,7 @@ function pmpromrss_basic_auth_challenge() {
 	}
 
 	// PMPro may not be installed, let's not try to log in or anything.
-	if ( ! function_exists( 'pmpro_is_spammer' ) || ! function_exists( 'pmpro_track_spam_activity' ) ) {
+	if ( ! defined( 'PMPRO_VERSION' ) ) {
 		status_header( 403 );
 		header( 'Content-Type: text/plain; charset=' . get_bloginfo( 'charset' ) );
 		esc_html_e( 'Paid Memberships Pro not activated. Please ensure you have it installed and activated.', 'pmpro-member-rss' );
@@ -177,7 +252,7 @@ function pmpromrss_basic_auth_challenge() {
 	}
 
 	// No spammers allowed.
-	if ( pmpro_is_spammer() ) {
+	if ( pmpromrss_spam_protection_enabled() && pmpro_is_spammer() ) {
 		status_header( 403 );
 		header( 'Content-Type: text/plain; charset=' . get_bloginfo( 'charset' ) );
 		esc_html_e( 'Slow down. Access denied. Please try again later.', 'pmpro-member-rss' );
@@ -188,8 +263,11 @@ function pmpromrss_basic_auth_challenge() {
 	$username = $credentials['username'];
 	$password = $credentials['password'];
 
+	// This is mainly for RSS app readers, people testing this in their browser will get flagged on first page load - which is okay.
 	if ( empty( $username ) || empty( $password ) ) {
-		pmpro_track_spam_activity(); // Count the activity here now.
+		if ( pmpromrss_spam_protection_enabled() ) {
+			pmpro_track_spam_activity();
+		}
 		status_header( 401 );
 		header( 'WWW-Authenticate: Basic realm="Private Feed - Member Login Required"' );
 		esc_html_e( 'Authentication required. Please provide your WordPress username and application password.', 'pmpro-member-rss' );
@@ -197,26 +275,28 @@ function pmpromrss_basic_auth_challenge() {
 	}
 
 	// Only use application passwords for authentication, not regular passwords.
+	// Note: wp_authenticate_application_password() returns null (not WP_Error) when it bails early
+	// (e.g. application passwords unavailable), so we treat anything non-WP_User as a failure.
 	$user = wp_authenticate_application_password( null, $username, $password );
 
-	// There was an error authenticating the user.
-	if ( is_wp_error( $user ) ) {
-		pmpro_track_spam_activity(); // Count the activity here as well for failed logins.
+	// If application password auth failed or returned null, try memberkey-as-password fallback.
+	if ( ! ( $user instanceof WP_User ) && get_option( 'pmpro_pmpromrss_memberkey_as_password' ) === 'Enabled' ) {
+		$user = pmpromrss_authenticate_memberkey_password( $username, $password );
+	}
+
+	// There was an error authenticating the user (WP_Error or still null).
+	if ( ! ( $user instanceof WP_User ) ) {
+		if ( pmpromrss_spam_protection_enabled() ) {
+			pmpro_track_spam_activity();
+		}
 		status_header( 403 );
 		header( 'Content-Type: text/plain; charset=' . get_bloginfo( 'charset' ) );
-		esc_html_e( 'Access denied. Invalid username or application password.', 'pmpro-member-rss' );
+		esc_html_e( 'Access denied. Please check your authentication credentials or reach out to the site administrator for assistance.', 'pmpro-member-rss' );
 		exit;
 	}
 
-	// Authentication successful - set the RSS user ID
-	// This allows the existing membership access filter to work
+	// Authentication successful. User and filter swap were already handled in pmpromrss_pre_get_posts.
 	$pmpromrss_user_id = $user->ID;
-
-	// Use our search filter if PMPro set one up.
-	if ( $wp_query->is_feed && has_filter( 'pre_get_posts', 'pmpro_search_filter' ) ) {
-		remove_filter( 'pre_get_posts', 'pmpro_search_filter' );
-		add_filter( 'pre_get_posts', 'pmpromrss_search_filter' );
-	}
 }
 add_action( 'template_redirect', 'pmpromrss_basic_auth_challenge' );
 
@@ -284,6 +364,30 @@ function pmpromrss_get_auth_credentials() {
 		'username' => $username,
 		'password' => $password,
 	);
+}
+
+/**
+ * Authenticate a user by matching the Basic Auth password against their memberkey.
+ * The username is used to look up the user, then the password is compared timing-safely.
+ *
+ * @since 0.5
+ *
+ * @param string $username The username provided via Basic Auth.
+ * @param string $password The password provided via Basic Auth.
+ * @return WP_User|WP_Error User object on success, WP_Error on failure.
+ */
+function pmpromrss_authenticate_memberkey_password( $username, $password ) {
+	$user = get_user_by( 'login', $username );
+	if ( ! $user ) {
+		return new WP_Error( 'pmpromrss_invalid_key', __( 'Invalid username or member key.', 'pmpro-member-rss' ) );
+	}
+
+	$stored_key = get_user_meta( $user->ID, 'pmpromrss_key', true );
+	if ( empty( $stored_key ) || ! hash_equals( $stored_key, $password ) ) {
+		return new WP_Error( 'pmpromrss_invalid_key', __( 'Invalid username or member key.', 'pmpro-member-rss' ) );
+	}
+
+	return $user;
 }
 
 /**
