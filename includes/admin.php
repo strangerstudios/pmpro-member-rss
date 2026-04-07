@@ -42,6 +42,144 @@ function pmpromrss_hook_edit_member_profile() {
 }
 add_action( 'admin_init', 'pmpromrss_hook_edit_member_profile', 0 );
 
+
+/**
+ * Process a regenerate-key request from $_REQUEST.
+ *
+ * Verifies the nonce and capability, deletes the key meta on success, and
+ * returns a status string so callers can render feedback however they like.
+ *
+ * @since 0.5
+ *
+ * @return string 'success' | 'invalid_nonce' | 'no_permission' | '' (no request)
+ */
+function pmpromrss_process_regenerate_request() {
+	if ( 'GET' !== $_SERVER['REQUEST_METHOD'] || empty( $_GET['pmpromrss_regenerate_key'] ) || empty( $_GET['user_id'] ) ) {
+		return '';
+	}
+
+	if ( empty( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_key( $_GET['_wpnonce'] ), 'pmpromrss_regenerate' ) ) {
+		return 'invalid_nonce';
+	}
+
+	$user_id = intval( $_GET['user_id'] );
+
+	if ( ! current_user_can( 'edit_user', $user_id ) ) {
+		return 'no_permission';
+	}
+
+	delete_user_meta( $user_id, 'pmpromrss_key' );
+	return 'success';
+}
+
+/**
+ * Render the Feed Authentication card (RSS key display + regenerate button).
+ *
+ * Used by both the [pmpro_member_rss] shortcode and the frontend profile hook
+ * so the markup stays in one place.
+ *
+ * @since 0.5
+ *
+ * @param int   $user_id    The user whose key is displayed.
+ * @param array $regen_args Query args array for the regenerate link (pre-built by caller).
+ */
+function pmpromrss_render_frontend_feed_authentication( $user_id, $regen_args ) {
+
+	// Don't show anything if user has no membership level.
+    if ( function_exists( 'pmpro_hasMembershipLevel' ) && ! pmpro_hasMembershipLevel( null, $user_id ) ) {
+		return;
+	}
+
+	$basic_auth_enabled    = get_option( 'pmpro_pmpromrss_basic_auth' ) === 'Enabled';
+	$memberkey_as_password = get_option( 'pmpro_pmpromrss_memberkey_as_password' ) === 'Enabled';
+	$disable_url_key       = get_option( 'pmpro_pmpromrss_disable_url_key' ) === 'Enabled';
+	$block_dashboard       = get_option( 'pmpro_block_dashboard' ) === 'yes';
+
+	// When basic auth is on, URL key is disabled, and memberkey-as-password is off,
+	// users must authenticate via WordPress Application Passwords — no RSS key to display.
+	$app_passwords_only = $basic_auth_enabled && $disable_url_key && ! $memberkey_as_password;
+	?>
+	<div class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_card', 'pmpromrss_auth_card' ) ); ?>">
+		<h2 class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_card_title pmpro_font-large' ) ); ?>"><?php esc_html_e( 'Feed Authentication', 'pmpro-member-rss' ); ?></h2>
+		<div class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_card_content' ) ); ?>">
+			<?php if ( $app_passwords_only ) : ?>
+				<?php if ( ! $block_dashboard ) : ?>
+					<p><?php
+						printf(
+							/* translators: %s is a link to the WP admin profile page */
+							esc_html__( 'To access these feeds, you need a WordPress Application Password. %s to create one, then use your WordPress username and the application password in your RSS reader.', 'pmpro-member-rss' ),
+							'<a href="' . esc_url( admin_url( 'profile.php#application-passwords-section' ) ) . '">' . esc_html__( 'Visit your profile', 'pmpro-member-rss' ) . '</a>'
+						);
+					?></p>
+				<?php else : ?>
+					<p><?php esc_html_e( 'Contact the site administrator to receive your RSS feed authentication credentials.', 'pmpro-member-rss' ); ?></p>
+				<?php endif; ?>
+			<?php else : ?>
+				<div class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_form_fields' ) ); ?>">
+					<div class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_form_field pmpro_form_field-text pmpro_form_field-pmpromrss_key' ) ); ?>">
+						<label class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_form_label' ) ); ?>" for="pmpromrss_profile_key"><?php esc_html_e( 'Your RSS Key', 'pmpro-member-rss' ); ?></label>
+						<input type="text" id="pmpromrss_profile_key" readonly="readonly" value="<?php echo esc_attr( pmpromrss_getMemberKey( $user_id ) ); ?>" class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_form_input pmpro_form_input-text pmpro_form_input-pmpromrss_key' ) ); ?>" onclick="this.select();" />
+						<p class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_form_hint' ) ); ?>">
+							<?php if ( ! $disable_url_key ) : ?>
+								<?php esc_html_e( 'Your RSS key is embedded in the feed URLs above.', 'pmpro-member-rss' ); ?>
+							<?php endif; ?>
+
+							<?php if ( $basic_auth_enabled && $memberkey_as_password ) : ?>
+								<?php esc_html_e( 'Use your username and this RSS key as the password when authenticating with Basic Auth.', 'pmpro-member-rss' ); ?>
+							<?php endif; ?>
+
+							<?php esc_html_e( 'You can regenerate your key at any time. Regenerating it will invalidate the previous key.', 'pmpro-member-rss' ); ?>
+						</p>
+					</div>
+					<div class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_form_submit' ) ); ?>">
+						<a
+							class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_btn' ) ); ?>"
+							href="<?php echo esc_url( add_query_arg( $regen_args ) ); ?>"
+							onclick="return confirm( <?php echo wp_json_encode( __( "Regenerating your key will immediately break any RSS readers currently using the key-based URL. You'll need to update those readers with your new feed URL. Continue?", 'pmpro-member-rss' ) ); ?> );"
+						><?php esc_html_e( 'Regenerate Key', 'pmpro-member-rss' ); ?></a>
+					</div>
+				</div>
+			<?php endif; ?>
+		</div>
+	</div>
+	<?php
+}
+
+/**
+ * Add the Feed Authentication card to the frontend profile page.
+ *
+ * Only shown when no dedicated feeds page is configured (otherwise users
+ * are directed there instead).
+ *
+ * @since 0.4
+ *
+ * @param WP_User $user The user being viewed.
+ */
+function pmpromrss_add_to_frontend_edit_profile( $user ) {
+	if ( ! empty( pmpromrss_get_feeds_page_id() ) ) {
+		return;
+	}
+
+	$regen_status = pmpromrss_process_regenerate_request();
+
+	$regen_args = array(
+		'pmpromrss_regenerate_key' => 1,
+		'user_id'                  => $user->ID,
+		'_wpnonce'                 => wp_create_nonce( 'pmpromrss_regenerate' ),
+	);
+
+	if ( 'success' === $regen_status ) {
+		echo '<div class="' . esc_attr( pmpro_get_element_class( 'pmpro_message pmpro_success' ) ) . '"><p>' . esc_html__( 'A new RSS key has been generated. Update any RSS readers that were using the old feed URL.', 'pmpro-member-rss' ) . '</p></div>';
+	} elseif ( 'invalid_nonce' === $regen_status ) {
+		echo '<div class="' . esc_attr( pmpro_get_element_class( 'pmpro_message pmpro_error' ) ) . '"><p>' . esc_html__( 'Invalid request. Please try again.', 'pmpro-member-rss' ) . '</p></div>';
+	} elseif ( 'no_permission' === $regen_status ) {
+		echo '<div class="' . esc_attr( pmpro_get_element_class( 'pmpro_message pmpro_error' ) ) . '"><p>' . esc_html__( 'You do not have permission to regenerate this key.', 'pmpro-member-rss' ) . '</p></div>';
+	}
+
+	pmpromrss_render_frontend_feed_authentication( $user->ID, $regen_args );
+}
+add_action( 'pmpro_show_user_profile', 'pmpromrss_add_to_frontend_edit_profile' );
+
 /**
  *  Show RSS Feeds with Member Key on Membership Account Page
  * 
@@ -242,31 +380,16 @@ function pmpromrss_member_rss_shortcode() {
 		return '<p>' . esc_html__( 'You must have an active membership to access RSS feeds.', 'pmpro-member-rss' ) . '</p>';
 	}
 
-	// -------------------------------------------------------------------------
-	// Process regenerate key form submission (group-accounts pattern).
-	// -------------------------------------------------------------------------
-	$message = '';
-	if ( ! empty( $_REQUEST['pmpromrss_regenerate_key'] ) && ! empty( $_REQUEST['user_id'] ) ) {
-		if ( empty( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_key( $_REQUEST['_wpnonce'] ), 'pmpromrss_regenerate' ) ) {
-			$message = '<div class="' . esc_attr( pmpro_get_element_class( 'pmpro_message pmpro_error' ) ) . '"><p>' . esc_html__( 'Invalid request. Please try again.', 'pmpro-member-rss' ) . '</p></div>';
-		} else {
-			$regen_user_id = intval( $_REQUEST['user_id'] );
-			if ( ! current_user_can( 'edit_user', $regen_user_id ) ) {
-				$message = '<div class="' . esc_attr( pmpro_get_element_class( 'pmpro_message pmpro_error' ) ) . '"><p>' . esc_html__( 'You do not have permission to regenerate this key.', 'pmpro-member-rss' ) . '</p></div>';
-			} else {
-				delete_user_meta( $regen_user_id, 'pmpromrss_key' );
-				$message = '<div class="' . esc_attr( pmpro_get_element_class( 'pmpro_message pmpro_success' ) ) . '"><p>' . esc_html__( 'A new RSS key has been generated. Update any RSS readers that were using the old feed URL.', 'pmpro-member-rss' ) . '</p></div>';
-			}
-		}
+	// Process any regenerate-key request and build a feedback message.
+	$regen_status = pmpromrss_process_regenerate_request();
+	$message      = '';
+	if ( 'success' === $regen_status ) {
+		$message = '<div class="' . esc_attr( pmpro_get_element_class( 'pmpro_message pmpro_success' ) ) . '"><p>' . esc_html__( 'A new RSS key has been generated. Update any RSS readers that were using the old feed URL.', 'pmpro-member-rss' ) . '</p></div>';
+	} elseif ( 'invalid_nonce' === $regen_status ) {
+		$message = '<div class="' . esc_attr( pmpro_get_element_class( 'pmpro_message pmpro_error' ) ) . '"><p>' . esc_html__( 'Invalid request. Please try again.', 'pmpro-member-rss' ) . '</p></div>';
+	} elseif ( 'no_permission' === $regen_status ) {
+		$message = '<div class="' . esc_attr( pmpro_get_element_class( 'pmpro_message pmpro_error' ) ) . '"><p>' . esc_html__( 'You do not have permission to regenerate this key.', 'pmpro-member-rss' ) . '</p></div>';
 	}
-
-	// -------------------------------------------------------------------------
-	// Determine active auth mode.
-	// -------------------------------------------------------------------------
-	$basic_auth_enabled    = get_option( 'pmpro_pmpromrss_basic_auth' ) === 'Enabled';
-	$memberkey_as_password = get_option( 'pmpro_pmpromrss_memberkey_as_password' ) === 'Enabled';
-	$disable_url_key       = get_option( 'pmpro_pmpromrss_disable_url_key' ) === 'Enabled';
-	$block_dashboard       = get_option( 'pmpro_block_dashboard' ) === 'yes';
 
 	$feeds = apply_filters( 'pmpromrss_feeds', array( __( 'Recent Posts Feed', 'pmpro-member-rss' ) => get_bloginfo( 'rss_url' ) ) );
 
@@ -301,57 +424,10 @@ function pmpromrss_member_rss_shortcode() {
 				</div> <!-- end pmpro_card_content -->
 			</div> <!-- end pmpromrss_feeds_card -->
 
-			<?php if ( ! $basic_auth_enabled || ! $disable_url_key || $memberkey_as_password ) : ?>
-				<?php // ---- Card 2: RSS key display + regen ---- ?>
-				<div class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_card', 'pmpromrss_auth_card' ) ); ?>">
-					<h2 class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_card_title pmpro_font-large' ) ); ?>"><?php esc_html_e( 'Feed Authentication', 'pmpro-member-rss' ); ?></h2>
-					<div class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_card_content' ) ); ?>">
-						<div class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_form_fields' ) ); ?>">
-							<div class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_form_field pmpro_form_field-text pmpro_form_field-pmpromrss_key' ) ); ?>">
-								<label class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_form_label' ) ); ?>" for="pmpromrss_profile_key"><?php esc_html_e( 'Your RSS Key', 'pmpro-member-rss' ); ?></label>
-								<input type="text" id="pmpromrss_profile_key" readonly="readonly" value="<?php echo esc_attr( pmpromrss_getMemberKey( $user->ID ) ); ?>" class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_form_input pmpro_form_input-text pmpro_form_input-pmpromrss_key' ) ); ?>" onclick="this.select();" />
-								<p class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_form_hint' ) ); ?>">
-									<?php if ( ! $disable_url_key ) : ?>
-										<?php esc_html_e( 'Your RSS key is embedded in the feed URLs above.', 'pmpro-member-rss' ); ?>
-									<?php endif; ?>
-
-									<?php if ( $basic_auth_enabled && $memberkey_as_password ) : ?>
-										<?php esc_html_e( 'Use your username and this RSS key as the password when authenticating with Basic Auth.', 'pmpro-member-rss' ); ?>
-									<?php endif; ?>
-
-									<?php esc_html_e( 'You can regenerate your key at any time. Regenerating it will invalidate the previous key.', 'pmpro-member-rss' ); ?>
-								</p>
-							</div>
-							<div class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_form_submit' ) ); ?>">
-								<a
-									class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_btn' ) ); ?>"
-									href="<?php echo esc_url( add_query_arg( $regen_args ) ); ?>"
-									onclick="return confirm( <?php echo wp_json_encode( __( "Regenerating your key will immediately break any RSS readers currently using the key-based URL. You'll need to update those readers with your new feed URL. Continue?", 'pmpro-member-rss' ) ); ?> );"
-								><?php esc_html_e( 'Regenerate Key', 'pmpro-member-rss' ); ?></a>
-							</div> <!-- end pmpro_form_submit -->
-						</div> <!-- end pmpro_form_fields -->
-					</div> <!-- end pmpro_card_content -->
-				</div> <!-- end pmpromrss_auth_card -->
-
-			<?php else : ?>
-				<?php // ---- Card 2: Application Passwords only (basic auth ON, URL key disabled, memberkey-as-password disabled) ---- ?>
-				<div class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_card', 'pmpromrss_auth_card' ) ); ?>">
-					<h2 class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_card_title pmpro_font-large' ) ); ?>"><?php esc_html_e( 'Feed Authentication', 'pmpro-member-rss' ); ?></h2>
-					<div class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_card_content' ) ); ?>">
-						<?php if ( ! $block_dashboard ) : ?>
-							<p><?php
-								printf(
-									/* translators: %s is a link to the WP admin profile page */
-									esc_html__( 'To access these feeds, you need a WordPress Application Password. %s to create one, then use your WordPress username and the application password in your RSS reader.', 'pmpro-member-rss' ),
-									'<a href="' . esc_url( admin_url( 'profile.php#application-passwords-section' ) ) . '">' . esc_html__( 'Visit your profile', 'pmpro-member-rss' ) . '</a>'
-								);
-							?></p>
-						<?php else : ?>
-							<p><?php esc_html_e( 'Contact the site administrator to receive your RSS feed authentication credentials.', 'pmpro-member-rss' ); ?></p>
-						<?php endif; ?>
-					</div> <!-- end pmpro_card_content -->
-				</div> <!-- end pmpromrss_auth_card -->
-			<?php endif; ?>
+			<?php 
+			// ---- Card 2: Feed Authentication ----
+			pmpromrss_render_frontend_feed_authentication( $user->ID, $regen_args ); 
+			?>
 
 		</section> <!-- end pmpromrss_section -->
 		<div class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_actions_nav' ) ); ?>">
