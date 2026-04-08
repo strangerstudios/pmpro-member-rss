@@ -3,7 +3,7 @@ Contributors: strangerstudios
 Tags: rss, feed, blubrry, powerpress, podcasts, podcasting, paid memberships pro, secure, protect, lock
 Requires at least: 3.5
 Tested up to: 6.9
-Stable tag: 0.5
+Stable tag: 1.0
 
 Create Member-Specific RSS Feeds for Paid Memberships Pro
 
@@ -48,12 +48,13 @@ Please post it in the issues section of GitHub and we'll fix it as soon as we ca
 Please visit our premium support site at http://www.paidmembershipspro.com for more documentation and our support forums.
 
 == Changelog ==
-= 0.5 =
+= 1.0 - 2026-04-08 =
 * FEATURE: Added "Allow Memberkey as Basic Auth Password" setting. Members can use their memberkey as the password field in Basic Authentication, allowing RSS readers without application password support to authenticate securely.
 * FEATURE: Added "Disable Memberkey in URL" setting. When enabled, feed authentication via the memberkey URL parameter is blocked and members must use Basic Authentication instead.
 * FEATURE: Added `[pmpromrss_feeds]` shortcode and "Member RSS Feeds" PMPro page setting. Provides a dedicated member-facing page for feed management, key display, regeneration, and authentication guidance.
-* ENHANCEMENT: When the feeds page is configured, the Membership Account page shows a "Manage your RSS feeds" link instead of inline feed URLs, and the Edit Profile key display is suppressed.
+* ENHANCEMENT: When the feeds page is configured, the Membership Account page "Member RSS Feed" links to the dedicated page instead of inline feed URLs.
 * ENHANCEMENT: Updated the regenerate key confirmation to mention that RSS readers will need to be updated.
+* ENHANCEMENT: Improved messaging/hint around the Feed Authentication settings to clarify how to authenticate RSS feeds, including both Edit Member Panel and Frontend instructions.
 
 = 0.4 - 2026-02-12 =
 * FEATURE: Added in logic that you may pass basic header authentication to access the feed. Please use Application Passwords for authentication and not your main password. This is a more secure way to allow access to the feed without sharing your memberkey.

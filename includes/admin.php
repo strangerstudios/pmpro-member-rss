@@ -49,7 +49,7 @@ add_action( 'admin_init', 'pmpromrss_hook_edit_member_profile', 0 );
  * Verifies the nonce and capability, deletes the key meta on success, and
  * returns a status string so callers can render feedback however they like.
  *
- * @since 0.5
+ * @since 1.0
  *
  * @return string 'success' | 'invalid_nonce' | 'no_permission' | '' (no request)
  */
@@ -78,7 +78,7 @@ function pmpromrss_process_regenerate_request() {
  * Used by both the [pmpro_member_rss] shortcode and the frontend profile hook
  * so the markup stays in one place.
  *
- * @since 0.5
+ * @since 1.0
  *
  * @param int   $user_id    The user whose key is displayed.
  * @param array $regen_args Query args array for the regenerate link (pre-built by caller).
@@ -379,7 +379,7 @@ add_filter( 'pmpro_custom_advanced_settings', 'pmpromrss_advanced_settings', 5 )
 /**
  * Add "Member RSS Feeds" to the PMPro Extra Pages list.
  *
- * @since 0.5
+ * @since 1.0
  *
  * @param array $pages Array of extra page settings.
  * @return array
@@ -397,7 +397,7 @@ add_filter( 'pmpro_extra_page_settings', 'pmpromrss_extra_page_settings' );
 /**
  * Get the configured feeds page ID.
  *
- * @since 0.5
+ * @since 1.0
  *
  * @return int Page ID or 0 if not set.
  */
@@ -413,7 +413,7 @@ function pmpromrss_get_feeds_page_id() {
  * Shortcode: [pmpro_member_rss]
  * Renders the member RSS feeds management page.
  *
- * @since 0.5
+ * @since 1.0
  *
  * @return string HTML output.
  */
@@ -494,7 +494,7 @@ add_shortcode( 'pmpro_member_rss', 'pmpromrss_member_rss_shortcode' );
  * ("Allow Memberkey as Basic Auth Password" and "Disable Memberkey in URL")
  * unless "Enable Basic Authentication for RSS Feeds" is set to Yes.
  *
- * @since 0.5
+ * @since 1.0
  */
 function pmpromrss_advanced_settings_js() {
 	if ( ! is_admin() || empty( $_GET['page'] ) || $_GET['page'] !== 'pmpro-advancedsettings' ) {

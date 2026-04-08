@@ -102,7 +102,7 @@ function pmpromrss_url( $url, $user_id = NULL ) {
 /**
  * Whether PMPro spam protection is active and the required functions are available.
  *
- * @since 0.5
+ * @since 1.0
  * @return bool
  */
 function pmpromrss_spam_protection_enabled() {
@@ -370,7 +370,7 @@ function pmpromrss_get_auth_credentials() {
  * Authenticate a user by matching the Basic Auth password against their memberkey.
  * The username is used to look up the user, then the password is compared timing-safely.
  *
- * @since 0.5
+ * @since 1.0
  *
  * @param string $username The username provided via Basic Auth.
  * @param string $password The password provided via Basic Auth.
