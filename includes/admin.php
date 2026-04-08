@@ -120,26 +120,25 @@ function pmpromrss_render_frontend_feed_authentication( $user_id, $regen_args ) 
 						<label class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_form_label' ) ); ?>" for="pmpromrss_profile_key"><?php esc_html_e( 'Your RSS Key', 'pmpro-member-rss' ); ?></label>
 						<input type="text" id="pmpromrss_profile_key" readonly="readonly" value="<?php echo esc_attr( pmpromrss_getMemberKey( $user_id ) ); ?>" class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_form_input pmpro_form_input-text pmpro_form_input-pmpromrss_key' ) ); ?>" onclick="this.select();" />
 						<p class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_form_hint' ) ); ?>">
-							<?php if ( ! $disable_url_key ) : ?>
-								<?php $feeds_page_id = pmpromrss_get_feeds_page_id(); ?>
-								<?php if ( ! empty( $feeds_page_id ) && is_page( $feeds_page_id ) ) : ?>
-									<?php esc_html_e( 'Your RSS key is embedded in the feed URLs above.', 'pmpro-member-rss' ); ?>
-								<?php else : ?>
-									<?php
+							<?php if ( ! $disable_url_key ) :
+								$feeds_page_id = pmpromrss_get_feeds_page_id();
+								if ( ! empty( $feeds_page_id ) && is_page( $feeds_page_id ) ) :
+									esc_html_e( 'Your RSS key is embedded in the feed URLs above.', 'pmpro-member-rss' );
+								else :
 										printf(
 											/* translators: %s is the memberkey query parameter shown as inline code */
 											esc_html__( 'Add %s to the feed URLs to authenticate.', 'pmpro-member-rss' ),
 											'<code>?memberkey=' . esc_html( pmpromrss_getMemberKey( $user_id ) ) . '</code>'
 										);
-									?>
-								<?php endif; ?>
-							<?php endif; ?>
+								endif;
+							endif;
 
-							<?php if ( $basic_auth_enabled && $memberkey_as_password ) : ?>
-								<?php esc_html_e( 'Use your username and this RSS key as the password when authenticating with Basic Auth.', 'pmpro-member-rss' ); ?>
-							<?php endif; ?>
+							if ( $basic_auth_enabled && $memberkey_as_password ) :
+								esc_html_e( 'Use your username and this RSS key as the password when authenticating with Basic Auth.', 'pmpro-member-rss' );
+							endif;
 
-							<?php esc_html_e( 'You can regenerate your key at any time. Regenerating it will invalidate the previous key.', 'pmpro-member-rss' ); ?>
+							esc_html_e( 'You can regenerate your key at any time. Regenerating it will invalidate the previous key.', 'pmpro-member-rss' ); 
+							?>
 						</p>
 					</div>
 					<div class="<?php echo esc_attr( pmpro_get_element_class( 'pmpro_form_submit' ) ); ?>">
@@ -222,11 +221,21 @@ add_action('pmpro_member_links_bottom', 'pmpromrss_pmpro_member_links_bottom');
 /**
  * Display the Member RSS Key and allow it to be regenerated in the Edit Member.
  * @since 0.3
- * 
+ *
  * @param  object $user The current user object that is being edited
  * @return mixed HTML content
  */
-function pmpromrss_memberkeys_profile( $user ) { 
+function pmpromrss_memberkeys_profile( $user ) {
+	// Get options for RSS, to display the correct output here - maybe member key isn't even used.
+	$basic_auth_enabled    = get_option( 'pmpro_pmpromrss_basic_auth' ) === 'Enabled';
+	$memberkey_as_password = get_option( 'pmpro_pmpromrss_memberkey_as_password' ) === 'Enabled';
+	$disable_url_key       = get_option( 'pmpro_pmpromrss_disable_url_key' ) === 'Enabled';
+	$block_dashboard       = get_option( 'pmpro_block_dashboard' ) === 'yes';
+
+	// When basic auth is on, URL key is disabled, and memberkey-as-password is off,
+	// users must authenticate via WordPress Application Passwords — no RSS key to display.
+	$app_passwords_only = $basic_auth_enabled && $disable_url_key && ! $memberkey_as_password;
+
 	$args = array(
 		'pmpromrss_regenerate_key' => 1,
 		'user_id' => $user->ID,
@@ -240,15 +249,45 @@ function pmpromrss_memberkeys_profile( $user ) {
 	?>
 	<table class="form-table">
 		<tr id='pmpromrss_key'>
-			<th><label for="address"><?php esc_html_e( 'Member RSS Key', 'pmpro-member-rss' ); ?></label></th>
+			<th><label><?php esc_html_e( 'Feed Authentication', 'pmpro-member-rss' ); ?></label></th>
 			<td>
-				<input type="text" name="pmpromrss_profile_key" id="pmpromrss_profile_key" readonly="readonly" value="<?php echo esc_attr( pmpromrss_getMemberKey( $user->ID ) ); ?>" class="regular-text" /> <a href="<?php echo "javascript:pmpro_askfirst('" . esc_js( __( "Are you sure you want to regenerate this user's key?", 'pmpro-member-rss' ) ) . "', '" . esc_url( add_query_arg( $args ) ) . "');"; ?>" class="<?php echo esc_attr( 'button button-primary' ); ?>"><?php esc_html_e( 'Regenerate Key', 'pmpro-member-rss' ); ?></a>
-				<p class="description"><?php esc_html_e( "You may regenerate the member's RSS key at any time. Regenerating it will invalidate the previous key.", 'pmpro-member-rss' ); ?></p>
+				<?php if ( $app_passwords_only ) : ?>
+						<p><?php
+							printf(
+								/* translators: %s is a link to the user's profile page */
+								esc_html__( 'This member must use a WordPress Application Password to access RSS feeds. They can create one on their %s.', 'pmpro-member-rss' ),
+								'<a href="' . esc_url( get_edit_user_link( $user->ID ) . '#application-passwords-section' ) . '">' . esc_html__( 'profile page', 'pmpro-member-rss' ) . '</a>'
+							);
+						?></p>
+				<?php else : ?>
+					<div>
+						<label for="pmpromrss_profile_key"><?php esc_html_e( 'RSS Key', 'pmpro-member-rss' ); ?></label>
+						<div style="margin-top: 8px;">
+							<input type="text" name="pmpromrss_profile_key" id="pmpromrss_profile_key" readonly="readonly" value="<?php echo esc_attr( pmpromrss_getMemberKey( $user->ID ) ); ?>" class="regular-text" />
+							<a href="<?php echo "javascript:pmpro_askfirst('" . esc_js( __( "Are you sure you want to regenerate this user's key?", 'pmpro-member-rss' ) ) . "', '" . esc_url( add_query_arg( $args ) ) . "');"; ?>" class="<?php echo esc_attr( 'button button-primary' ); ?>"><?php esc_html_e( 'Regenerate Key', 'pmpro-member-rss' ); ?></a>
+						</div>
+						<p class="description" style="margin-top: 8px;">
+							<?php if ( ! $disable_url_key ) :
+								printf(
+											/* translators: %s is the memberkey query parameter shown as inline code */
+											esc_html__( 'Members can add %s to the feed URLs to authenticate.', 'pmpro-member-rss' ),
+											'<code>?memberkey=' . esc_html( pmpromrss_getMemberKey( $user->ID ) ) . '</code>'
+										);
+							endif;
+
+							if ( $basic_auth_enabled && $memberkey_as_password ) :
+								esc_html_e( "This key can be used as the password for Basic Auth with the member's username.", 'pmpro-member-rss' );
+							endif;
+
+							esc_html_e( 'Regenerating the key will invalidate the previous key.', 'pmpro-member-rss' );
+							?>
+						</p>
+					</div>
+				<?php endif; ?>
 			</td>
 		</tr>
-		
 	</table>
-<?php 
+<?php
 }
 
 /**
@@ -318,7 +357,7 @@ function pmpromrss_advanced_settings( $fields ) {
 			'Enabled'  => __( 'Yes - allow members to use their member RSS key as the Basic Auth password', 'pmpro-member-rss' ),
 		),
 		'label'       => sprintf( __( 'Allow memberkey as Basic Auth Password', 'pmpro-member-rss' ), '<code>' . esc_html( 'memberkey' ) . '</code>' ),
-		'description' => sprintf( __( 'When enabled, members can enter their username and member RSS key (%s) as the Basic Auth password', 'pmpro-member-rss' ), '<code>' . esc_html( 'memberkey' ) . '</code>' ),
+		'description' => sprintf( __( 'When enabled, members can enter their username and member RSS key (%s) as the Basic Auth password.', 'pmpro-member-rss' ), '<code>' . esc_html( 'memberkey' ) . '</code>' ),
 	);
 
 	// Prevent the memberkey from being used as a URL parameter entirely.
