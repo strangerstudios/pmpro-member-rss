@@ -268,7 +268,11 @@ function pmpromrss_memberkeys_profile( $user ) {
 						</div>
 						<p class="description" style="margin-top: 8px;">
 							<?php if ( ! $disable_url_key ) :
-								esc_html_e( 'The RSS key can be added as a URL parameter to authenticate feed access.', 'pmpro-member-rss' );
+								printf(
+											/* translators: %s is the memberkey query parameter shown as inline code */
+											esc_html__( 'Members can add %s to the feed URLs to authenticate.', 'pmpro-member-rss' ),
+											'<code>?memberkey=' . esc_html( pmpromrss_getMemberKey( $user->ID ) ) . '</code>'
+										);
 							endif;
 
 							if ( $basic_auth_enabled && $memberkey_as_password ) :
