@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-04-07T14:23:00+00:00\n"
+"POT-Creation-Date: 2026-04-08T08:42:07+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: pmpro-member-rss\n"
@@ -44,6 +44,7 @@ msgid "Member RSS"
 msgstr ""
 
 #: includes/admin.php:103
+#: includes/admin.php:252
 msgid "Feed Authentication"
 msgstr ""
 
@@ -70,143 +71,163 @@ msgid "Your RSS key is embedded in the feed URLs above."
 msgstr ""
 
 #. translators: %s is the memberkey query parameter shown as inline code
-#: includes/admin.php:131
+#: includes/admin.php:130
 #, php-format
 msgid "Add %s to the feed URLs to authenticate."
 msgstr ""
 
-#: includes/admin.php:139
+#: includes/admin.php:137
 msgid "Use your username and this RSS key as the password when authenticating with Basic Auth."
 msgstr ""
 
-#: includes/admin.php:142
+#: includes/admin.php:140
 msgid "You can regenerate your key at any time. Regenerating it will invalidate the previous key."
 msgstr ""
 
-#: includes/admin.php:149
+#: includes/admin.php:148
 msgid "Regenerating your key will immediately break any RSS readers currently using the key-based URL. You'll need to update those readers with your new feed URL. Continue?"
 msgstr ""
 
-#: includes/admin.php:150
-#: includes/admin.php:245
+#: includes/admin.php:149
+#: includes/admin.php:267
 msgid "Regenerate Key"
 msgstr ""
 
-#: includes/admin.php:183
-#: includes/admin.php:398
+#: includes/admin.php:182
+#: includes/admin.php:437
 msgid "A new RSS key has been generated. Update any RSS readers that were using the old feed URL."
 msgstr ""
 
-#: includes/admin.php:185
-#: includes/admin.php:400
+#: includes/admin.php:184
+#: includes/admin.php:439
 msgid "Invalid request. Please try again."
 msgstr ""
 
-#: includes/admin.php:187
-#: includes/admin.php:402
+#: includes/admin.php:186
+#: includes/admin.php:441
 msgid "You do not have permission to regenerate this key."
 msgstr ""
 
-#: includes/admin.php:205
-#: includes/admin.php:350
+#: includes/admin.php:204
+#: includes/admin.php:389
 msgid "Member RSS Feeds"
 msgstr ""
 
-#: includes/admin.php:243
-msgid "Member RSS Key"
+#. translators: %s is a link to the user's profile page
+#: includes/admin.php:258
+#, php-format
+msgid "This member must use a WordPress Application Password to access RSS feeds. They can create one on their %s."
 msgstr ""
 
-#: includes/admin.php:245
+#: includes/admin.php:259
+msgid "profile page"
+msgstr ""
+
+#: includes/admin.php:264
+msgid "RSS Key"
+msgstr ""
+
+#: includes/admin.php:267
 msgid "Are you sure you want to regenerate this user's key?"
 msgstr ""
 
-#: includes/admin.php:246
-msgid "You may regenerate the member's RSS key at any time. Regenerating it will invalidate the previous key."
+#. translators: %s is the memberkey query parameter shown as inline code
+#: includes/admin.php:273
+#, php-format
+msgid "Members can add %s to the feed URLs to authenticate."
 msgstr ""
 
-#: includes/admin.php:268
+#: includes/admin.php:279
+msgid "This key can be used as the password for Basic Auth with the member's username."
+msgstr ""
+
+#: includes/admin.php:282
+msgid "Regenerating the key will invalidate the previous key."
+msgstr ""
+
+#: includes/admin.php:307
 msgid "Invalid nonce for regen. Try again."
 msgstr ""
 
-#: includes/admin.php:284
+#: includes/admin.php:323
 msgid "A new key has been generated."
 msgstr ""
 
-#: includes/admin.php:305
+#: includes/admin.php:344
 msgid "No - members use the memberkey URL to access their feeds (default)"
 msgstr ""
 
-#: includes/admin.php:306
+#: includes/admin.php:345
 msgid "Yes - allow members to authenticate using HTTP Basic Authentication"
 msgstr ""
 
-#: includes/admin.php:308
+#: includes/admin.php:347
 msgid "Enable Basic Auth for RSS Feeds"
 msgstr ""
 
-#: includes/admin.php:309
+#: includes/admin.php:348
 #, php-format
 msgid "Allow members to authenticate their RSS reader when the %s parameter is set."
 msgstr ""
 
-#: includes/admin.php:317
+#: includes/admin.php:356
 msgid "No - members must use a WordPress Application Password (default)"
 msgstr ""
 
-#: includes/admin.php:318
+#: includes/admin.php:357
 msgid "Yes - allow members to use their member RSS key as the Basic Auth password"
 msgstr ""
 
-#: includes/admin.php:320
+#: includes/admin.php:359
 msgid "Allow memberkey as Basic Auth Password"
 msgstr ""
 
-#: includes/admin.php:321
+#: includes/admin.php:360
 #, php-format
-msgid "When enabled, members can enter their username and member RSS key (%s) as the Basic Auth password"
+msgid "When enabled, members can enter their username and member RSS key (%s) as the Basic Auth password."
 msgstr ""
 
-#: includes/admin.php:329
+#: includes/admin.php:368
 msgid "No - allow feed access via the memberkey in URL (default)"
 msgstr ""
 
-#: includes/admin.php:330
+#: includes/admin.php:369
 msgid "Yes - require Basic Auth for all feed access"
 msgstr ""
 
-#: includes/admin.php:332
+#: includes/admin.php:371
 msgid "Disable memberkey in URL"
 msgstr ""
 
-#: includes/admin.php:333
+#: includes/admin.php:372
 msgid "When enabled, members must use Basic Authentication to access their RSS feeds. The memberkey URL parameter will no longer work. Requires \"Enable Basic Auth for RSS Feeds\" to be enabled."
 msgstr ""
 
-#: includes/admin.php:352
+#: includes/admin.php:391
 msgid "Include the [pmpro_member_rss] shortcode."
 msgstr ""
 
-#: includes/admin.php:384
+#: includes/admin.php:423
 msgid "You must be logged in to view your RSS feeds."
 msgstr ""
 
-#: includes/admin.php:391
+#: includes/admin.php:430
 msgid "You must have an active membership to access RSS feeds."
 msgstr ""
 
-#: includes/admin.php:405
+#: includes/admin.php:444
 msgid "Recent Posts Feed"
 msgstr ""
 
-#: includes/admin.php:422
+#: includes/admin.php:461
 msgid "Your RSS Feeds"
 msgstr ""
 
-#: includes/admin.php:425
+#: includes/admin.php:464
 msgid "Copy a feed URL into your RSS reader to access your member content."
 msgstr ""
 
-#: includes/admin.php:445
+#: includes/admin.php:484
 msgid "View Your Membership Account &rarr;"
 msgstr ""
 
