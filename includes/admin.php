@@ -54,7 +54,7 @@ add_action( 'admin_init', 'pmpromrss_hook_edit_member_profile', 0 );
  * @return string 'success' | 'invalid_nonce' | 'no_permission' | '' (no request)
  */
 function pmpromrss_process_regenerate_request() {
-	if ( 'GET' !== $_SERVER['REQUEST_METHOD'] || empty( $_GET['pmpromrss_regenerate_key'] ) || empty( $_GET['user_id'] ) ) {
+	if ( ! isset( $_SERVER['REQUEST_METHOD'] ) || 'GET' !== $_SERVER['REQUEST_METHOD'] || empty( $_GET['pmpromrss_regenerate_key'] ) || empty( $_GET['user_id'] ) ) {
 		return '';
 	}
 
@@ -243,9 +243,11 @@ function pmpromrss_memberkeys_profile( $user ) {
 	);
 
 	// If the request comes from the member edit panel, let's keep it on the same tab.
+	// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only: only carries the current tab into the regenerate link, which is nonce-checked in pmpromrss_process_regenerate_request().
 	if ( ! empty( $_REQUEST['pmpro_member_edit_panel'] ) ) {
-		$args['pmpro_member_edit_panel'] = sanitize_text_field( $_REQUEST['pmpro_member_edit_panel'] );
+		$args['pmpro_member_edit_panel'] = sanitize_text_field( wp_unslash( $_REQUEST['pmpro_member_edit_panel'] ) );
 	}
+	// phpcs:enable WordPress.Security.NonceVerification.Recommended
 	?>
 	<table class="form-table">
 		<tr id='pmpromrss_key'>
@@ -497,7 +499,7 @@ add_shortcode( 'pmpro_member_rss', 'pmpromrss_member_rss_shortcode' );
  * @since 1.0
  */
 function pmpromrss_advanced_settings_js() {
-	if ( ! is_admin() || empty( $_GET['page'] ) || $_GET['page'] !== 'pmpro-advancedsettings' ) {
+	if ( ! is_admin() || empty( $_GET['page'] ) || $_GET['page'] !== 'pmpro-advancedsettings' ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin page check to decide whether to print inline JS.
 		return;
 	}
 	?>
