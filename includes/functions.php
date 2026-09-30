@@ -313,7 +313,7 @@ add_action( 'template_redirect', 'pmpromrss_basic_auth_challenge' );
  */
 function pmpromrss_allow_application_passwords( $is_api_request ) {
 	// Treat our feed request as an "API request" so application passwords are allowed.
-	if ( ! empty( $_GET['pmpromrss_basic_auth'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only feed authentication routing flag; no state change.
+	if ( ! empty( $_GET['pmpromrss_basic_auth'] ) ) {
 		return true;
 	}
 	return $is_api_request;
@@ -357,7 +357,7 @@ function pmpromrss_get_auth_credentials() {
 	// Fallback to PHP_AUTH_USER/PHP_AUTH_PW (may not work on all servers)
 	if ( empty( $username ) && empty( $password ) ) {
 		$username = $_SERVER['PHP_AUTH_USER'] ?? ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized with sanitize_user() below; left slashed to match WP core's application password handling of PHP_AUTH_USER.
-		$password = $_SERVER['PHP_AUTH_PW'] ?? ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Password must not be unslashed or sanitized; matches WP core's handling of PHP_AUTH_PW.
+		$password = $_SERVER['PHP_AUTH_PW'] ?? ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Left slashed by wp_magic_quotes(), the same value WP core passes in wp_validate_application_password(). Unlike the decoded header above, this is not byte-exact; application passwords are reduced to [a-z0-9] before checking and member keys are hex, so slashing never affects a valid password.
 	}
 
 	// Sanitize username but leave password as-is as it needs to match.
