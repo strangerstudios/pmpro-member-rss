@@ -11,13 +11,14 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 function pmpromrss_init() {
 	global $wpdb, $pmpromrss_user_id;
 
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only feed authentication key; no state change.
 	if ( ! empty( $_REQUEST['memberkey'] ) ) {
 		// If URL memberkey auth is disabled, don't process it.
 		if ( get_option( 'pmpro_pmpromrss_disable_url_key' ) === 'Enabled' ) {
 			return;
 		}
 
-		$key = preg_replace( '/[^0-9a-f]/', '', $_REQUEST['memberkey'] );
+		$key = preg_replace( '/[^0-9a-f]/', '', $_REQUEST['memberkey'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Read-only feed authentication key; preg_replace strips everything but hex characters.
 		
 		// Try to get user_id from cache first
 		$cache_key = 'pmpromrss_key_' . $key;
@@ -25,6 +26,7 @@ function pmpromrss_init() {
 		
 		// If not in cache, query database
 		if ( false === $pmpromrss_user_id ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Prepared reverse lookup of usermeta by value; result is cached with wp_cache_set() below.
 			$pmpromrss_user_id = $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT user_id FROM $wpdb->usermeta WHERE meta_key = 'pmpromrss_key' AND meta_value = %s LIMIT 1",
@@ -125,6 +127,7 @@ function pmpromrss_pre_get_posts( $query ) {
 		return;
 	}
 
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only feed authentication routing; no state change.
 	if ( ! empty( $_REQUEST['memberkey'] ) ) {
 		// Memberkey method.
 
@@ -157,7 +160,7 @@ function pmpromrss_pre_get_posts( $query ) {
 
 		wp_set_current_user( absint( $pmpromrss_user_id ) );
 
-	} elseif ( ! empty( $_GET['pmpromrss_basic_auth'] ) ) {
+	} elseif ( ! empty( $_GET['pmpromrss_basic_auth'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only feed authentication routing flag; no state change.
 		// Basic auth method — authenticate early so the filter swap happens before the query runs.
 		// template_redirect will still handle issuing the 401/403 responses when auth fails.
 
@@ -231,7 +234,7 @@ function pmpromrss_basic_auth_challenge() {
 	}
 
 	// Check for our parameter to prompt Basic Auth login.
-	if ( empty( $_GET['pmpromrss_basic_auth'] ) ) {
+	if ( empty( $_GET['pmpromrss_basic_auth'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only feed authentication routing flag; no state change.
 		return;
 	}
 
@@ -337,9 +340,9 @@ function pmpromrss_get_auth_credentials() {
 
 	// Try different methods to get the Authorization header
 	if ( isset( $_SERVER['HTTP_AUTHORIZATION'] ) ) {
-		$auth_header = $_SERVER['HTTP_AUTHORIZATION'];
+		$auth_header = $_SERVER['HTTP_AUTHORIZATION']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Raw Basic auth header; the base64 payload has no slashable characters and the decoded password must stay byte-exact.
 	} elseif ( isset( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) ) {
-		$auth_header = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+		$auth_header = $_SERVER['REDIRECT_HTTP_AUTHORIZATION']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Raw Basic auth header; the base64 payload has no slashable characters and the decoded password must stay byte-exact.
 	} elseif ( function_exists( 'apache_request_headers' ) ) {
 		$headers = apache_request_headers();
 		if ( isset( $headers['Authorization'] ) ) {
@@ -359,8 +362,8 @@ function pmpromrss_get_auth_credentials() {
 
 	// Fallback to PHP_AUTH_USER/PHP_AUTH_PW (may not work on all servers)
 	if ( empty( $username ) && empty( $password ) ) {
-		$username = $_SERVER['PHP_AUTH_USER'] ?? '';
-		$password = $_SERVER['PHP_AUTH_PW'] ?? '';
+		$username = $_SERVER['PHP_AUTH_USER'] ?? ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized with sanitize_user() below; left slashed to match WP core's application password handling of PHP_AUTH_USER.
+		$password = $_SERVER['PHP_AUTH_PW'] ?? ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Left slashed by wp_magic_quotes(), the same value WP core passes in wp_validate_application_password(). Unlike the decoded header above, this is not byte-exact; application passwords are reduced to [a-z0-9] before checking and member keys are hex, so slashing never affects a valid password.
 	}
 
 	// Sanitize username but leave password as-is as it needs to match.
