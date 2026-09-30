@@ -2,8 +2,8 @@
 Contributors: strangerstudios
 Tags: rss, feed, blubrry, powerpress, podcasts, podcasting, paid memberships pro, secure, protect, lock
 Requires at least: 3.5
-Tested up to: 6.9
-Stable tag: 1.0
+Tested up to: 7.1
+Stable tag: 1.0.1
 
 Create Member-Specific RSS Feeds for Paid Memberships Pro
 
@@ -48,6 +48,10 @@ Please post it in the issues section of GitHub and we'll fix it as soon as we ca
 Please visit our premium support site at http://www.paidmembershipspro.com for more documentation and our support forums.
 
 == Changelog ==
+= 1.0.1 - 2026-09-30 =
+* SECURITY: Application passwords are now only accepted on member feed requests when the Basic Authentication setting is enabled. #25 (@dparker1005)
+* SECURITY: Improved sanitization and escaping throughout the plugin to resolve Plugin Check security findings. #24 (@dparker1005)
+
 = 1.0 - 2026-04-08 =
 * FEATURE: Added "Allow Memberkey as Basic Auth Password" setting. Members can use their memberkey as the password field in Basic Authentication, allowing RSS readers without application password support to authenticate securely.
 * FEATURE: Added "Disable Memberkey in URL" setting. When enabled, feed authentication via the memberkey URL parameter is blocked and members must use Basic Authentication instead.
