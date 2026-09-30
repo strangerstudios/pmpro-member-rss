@@ -309,8 +309,14 @@ add_action( 'template_redirect', 'pmpromrss_basic_auth_challenge' );
  * @return $boolean True if we're trying to authenticate a feed request, otherwise return the original value.
  */
 function pmpromrss_allow_application_passwords( $is_api_request ) {
+	global $wp_query;
+
 	// Treat our feed request as an "API request" so application passwords are allowed.
-	if ( ! empty( $_GET['pmpromrss_basic_auth'] ) ) {
+	// Only once the main query is parsed as a feed; core's early determine_current_user check is intentionally declined.
+	if ( ! empty( $_GET['pmpromrss_basic_auth'] ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only feed authentication routing flag; no state change.
+		&& get_option( 'pmpro_pmpromrss_basic_auth' ) === 'Enabled'
+		&& $wp_query instanceof WP_Query
+		&& $wp_query->is_feed() ) {
 		return true;
 	}
 	return $is_api_request;
